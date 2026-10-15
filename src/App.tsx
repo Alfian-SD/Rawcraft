@@ -4,10 +4,11 @@ import { loadLauncherState, saveLauncherState } from './utils/storage';
 import { Header } from './components/Header';
 import { ProfileSidebar } from './components/ProfileSidebar';
 import { ProfileConfig } from './components/ProfileConfig';
+import { ExecutionPanel } from './components/ExecutionPanel';
 
 export default function App() {
   const [state, setState] = useState<LauncherState>(() => loadLauncherState());
-  const [isRunning] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
 
   // Sync state changes to storage
   useEffect(() => {
@@ -105,24 +106,13 @@ export default function App() {
           isRunning={isRunning}
         />
 
-        {/* Right Column: 03 // EXECUTION & STDOUT (Placeholder for Step 5) */}
-        <section
-          style={{
-            padding: '24px',
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '24px',
-          }}
-        >
-          <h3>03 // EXECUTION & STDOUT</h3>
-          <div className="card-elevated">
-            <h4 style={{ marginBottom: '8px' }}>RUN CONTROLLER</h4>
-            <p className="mono-text tiny-text" style={{ color: 'var(--color-disabled-text)' }}>
-              Execution console loading in Step 5...
-            </p>
-          </div>
-        </section>
+        {/* Right Column: 03 // EXECUTION & STDOUT */}
+        <ExecutionPanel
+          profile={activeProfile}
+          settings={state.globalSettings}
+          isRunning={isRunning}
+          onSetRunning={setIsRunning}
+        />
       </main>
     </div>
   );
