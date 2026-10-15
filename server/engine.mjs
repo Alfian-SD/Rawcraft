@@ -9,6 +9,7 @@ import {
   detectSystemJava,
   getRequiredJavaVersion,
 } from './javaManager.mjs';
+import { ensureLoaderProfile } from './loaderManager.mjs';
 
 const { Client, Authenticator } = mclc;
 
@@ -180,6 +181,21 @@ export async function launchInstance(config) {
 
   broadcastEvent('mc-console', `[RawCraft/JRE]: JVM Executable: ${resolvedJavaPath}`);
 
+  // Resolve or Download Mod Loader Profile (Fabric/Quilt/etc.)
+  let customLoader = null;
+  try {
+    customLoader = await ensureLoaderProfile(
+      instanceDir,
+      gameVersion,
+      loader,
+      loaderVersion,
+      (msg) => broadcastEvent('mc-console', msg)
+    );
+  } catch (err) {
+    broadcastEvent('mc-console', `[RawCraft/ERROR]: Loader setup failed: ${err.message}`);
+    throw err;
+  }
+
   const customJvm = jvmFlags.split(' ').map((s) => s.trim()).filter(Boolean);
 
   const launchOpts = {
@@ -189,6 +205,10 @@ export async function launchInstance(config) {
     version: {
       number: gameVersion,
       type: 'release',
+      ...(customLoader ? { custom: customLoader } : {}),
+    },
+    overrides: {
+      assetIndex: gameVersion,
     },
     memory: {
       max: `${maxRamMb}M`,
@@ -196,16 +216,6 @@ export async function launchInstance(config) {
     },
     customArgs: customJvm,
   };
-
-  // Configure mod loader if requested
-  if (loader === 'FABRIC') {
-    launchOpts.version.custom = 'fabric';
-    if (loaderVersion) {
-      launchOpts.version.fabricLoader = loaderVersion;
-    }
-  } else if (loader === 'FORGE' || loader === 'NEOFORGE') {
-    launchOpts.version.custom = 'forge';
-  }
 
   launcher.on('debug', (e) => {
     broadcastEvent('mc-console', `[RawCraft/DEBUG]: ${e}`);

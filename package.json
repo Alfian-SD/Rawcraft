@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "node src/utils/buildCommand.test.mjs && node test/v2-integration.test.mjs && node test/javaManager.test.mjs"
+    "test": "node src/utils/buildCommand.test.mjs && node test/v2-integration.test.mjs && node test/javaManager.test.mjs && node test/loaderManager.test.mjs"
   },
   "dependencies": {
     "adm-zip": "^0.6.1",
