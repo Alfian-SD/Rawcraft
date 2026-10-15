@@ -55,7 +55,7 @@ export const ProfileSidebar: React.FC<ProfileSidebarProps> = ({
 
         {/* Filter Chips */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-          {(['ALL', 'VANILLA', 'FABRIC', 'NEOFORGE'] as FilterType[]).map((ft) => (
+          {(['ALL', 'VANILLA', 'FABRIC', 'NEOFORGE', 'FORGE'] as FilterType[]).map((ft) => (
             <button
               key={ft}
               type="button"

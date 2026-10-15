@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LauncherState, Profile } from './types/launcher';
+import { LauncherState, Profile, ProgressData } from './types/launcher';
 import { loadLauncherState, saveLauncherState } from './utils/storage';
 import { Header } from './components/Header';
 import { ProfileSidebar } from './components/ProfileSidebar';
@@ -9,6 +9,7 @@ import { ExecutionPanel } from './components/ExecutionPanel';
 export default function App() {
   const [state, setState] = useState<LauncherState>(() => loadLauncherState());
   const [isRunning, setIsRunning] = useState(false);
+  const [progress, setProgress] = useState<ProgressData | null>(null);
 
   // Sync state changes to storage
   useEffect(() => {
@@ -79,6 +80,7 @@ export default function App() {
         settings={state.globalSettings}
         onUpdateSettings={handleUpdateSettings}
         isRunning={isRunning}
+        progress={progress}
       />
 
       <main
@@ -112,6 +114,7 @@ export default function App() {
           settings={state.globalSettings}
           isRunning={isRunning}
           onSetRunning={setIsRunning}
+          onProgress={setProgress}
         />
       </main>
     </div>

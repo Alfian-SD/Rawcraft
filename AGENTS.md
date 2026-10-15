@@ -1,20 +1,19 @@
-# AGENTS.md — RawCraft Project Rules
+# AGENTS.md — RawCraft Real Launcher + Modrinth Rules
 
-## Tech Stack
-- Framework: React 19 + TypeScript + Vite
-- Styling: Vanilla CSS ONLY (`src/index.css`). Do NOT install Tailwind, Bootstrap, or any UI component library.
-- Icons: Do NOT install `lucide-react` or any icon library. Use raw text, ASCII symbols (`//`, `[X]`, `+`), and typography only.
-- State/Storage: React state synced to `localStorage` key `rawcraft_profiles_v1` (with clean adapter functions ready for Tauri `plugin-fs`).
+## 1. Tech Stack & Responsibilities
+- **Frontend (`src/`)**: React 19 + TypeScript + Vanilla CSS (`src/index.css`).
+- **Backend / Services**: Local execution runtime & Modrinth API client.
+- **Modrinth API (`src/api/modrinth.ts`)**: Uses `https://api.modrinth.com/v2`. Always send header `'User-Agent': 'RawCraftLauncher/1.0.0'`.
 
-## Strict Design System Rules (Read `rawblock-DESIGN.md` before writing UI)
-1. NEVER use `border-radius` (must be `0px` everywhere, except `.radio-btn` which is `50%`).
-2. NEVER use `box-shadow`, `linear-gradient`, `backdrop-filter`, or `opacity` for disabled states.
-3. Load Google Fonts in `index.html`: `Archivo Black`, `Work Sans` (400, 600), and `Space Mono` (400).
-4. Use only exact hex codes from `rawblock-DESIGN.md`: `#000000`, `#FFFFFF`, `#F0F0F0`, `#E8E8E8`, `#F5F5F5`, `#CCCCCC`, `#0000FF`, `#008000`, `#FFA500`, `#FF0000`.
-5. Input focus states must change border width from `3px solid #000000` to `5px solid #000000` with `outline: none`.
+## 2. Non-Negotiable Visual Rules (`rawblock-DESIGN.md`)
+- `border-radius: 0px` on EVERY element (only exception: `.raw-radio` is `50%`).
+- `box-shadow: none` everywhere. Hierarchy = `1px`, `3px`, and `5px` solid `#000000` borders.
+- DO NOT render `<img />` tags for Modrinth project icons or gallery screenshots. Rule #9 forbids decorative images and icons.
+- Disabled states must use `#CCCCCC` borders and `#F5F5F5` fills—NEVER CSS `opacity`.
 
-## Architecture & Guardrails ("Don't Touch")
-- Keep all data types in `src/types/launcher.ts`.
-- Keep command generation pure and isolated in `src/utils/buildCommand.ts`.
-- Do NOT modify existing working components when asked to build a new column unless wiring props in `App.tsx`.
-- Commit-ready output: Never leave placeholder `// TODO` comments in code you generate.
+## 3. Modrinth Facet Mapping
+When querying `GET https://api.modrinth.com/v2/search`:
+- Mods: `facets=[["project_type:mod"],["versions:<gameVersion>"],["categories:<loaderLower>"]]`
+- Modpacks: `facets=[["project_type:modpack"],["versions:<gameVersion>"],["categories:<loaderLower>"]]`
+- Texture/Resource Packs: `facets=[["project_type:resourcepack"],["versions:<gameVersion>"]]`
+- Shaders: `facets=[["project_type:shader"],["versions:<gameVersion>"]]`

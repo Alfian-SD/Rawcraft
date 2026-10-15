@@ -1,8 +1,11 @@
-export type LoaderType = 'VANILLA' | 'FABRIC' | 'NEOFORGE';
+export type LoaderType = 'VANILLA' | 'FABRIC' | 'NEOFORGE' | 'QUILT' | 'FORGE';
+
+export type AuthMode = 'OFFLINE' | 'MICROSOFT';
 
 export interface ModItem {
   fileName: string;
   enabled: boolean;
+  size?: number;
 }
 
 export interface Profile {
@@ -20,6 +23,15 @@ export interface Profile {
 export interface GlobalSettings {
   username: string;
   javaPath: string;
+  authMode?: AuthMode;
+}
+
+export interface ProgressData {
+  type?: string;
+  task?: string;
+  total?: number;
+  current?: number;
+  percent: number;
 }
 
 export interface LauncherState {

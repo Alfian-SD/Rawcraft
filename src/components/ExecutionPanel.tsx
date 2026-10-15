@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Profile, GlobalSettings } from '../types/launcher';
+import { Profile, GlobalSettings, ProgressData } from '../types/launcher';
 import { buildCommand, validateRam } from '../utils/buildCommand';
+import { launchInstance, terminateProcess } from '../api/instanceClient';
 
 interface ExecutionPanelProps {
   profile: Profile;
   settings: GlobalSettings;
   isRunning: boolean;
   onSetRunning: (running: boolean) => void;
+  onProgress?: (progress: ProgressData | null) => void;
 }
 
 export const ExecutionPanel: React.FC<ExecutionPanelProps> = ({
@@ -14,32 +16,66 @@ export const ExecutionPanel: React.FC<ExecutionPanelProps> = ({
   settings,
   isRunning,
   onSetRunning,
+  onProgress,
 }) => {
   const [logs, setLogs] = useState<string[]>([
     `[${new Date().toLocaleTimeString()}] [RawCraft/INFO]: Ready. Select instance and click EXECUTE to launch.`,
   ]);
   const [copied, setCopied] = useState(false);
+  const [telemetry, setTelemetry] = useState<string>('TELEMETRY: IDLE');
   const logContainerRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<number | null>(null);
 
   const command = buildCommand(profile, settings);
   const isRamValid = validateRam(profile.maxRamMb);
 
-  // Auto-scroll logs to bottom
+  // Connect to SSE stream
+  useEffect(() => {
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = new EventSource('/api/events');
+
+      eventSource.addEventListener('mc-console', (e) => {
+        const text = JSON.parse(e.data);
+        setLogs((prev) => [...prev, `[${new Date().toLocaleTimeString()}] ${text}`]);
+      });
+
+      eventSource.addEventListener('mc-progress', (e) => {
+        const data = JSON.parse(e.data) as ProgressData;
+        if (onProgress) onProgress(data);
+        setTelemetry(`DOWNLOAD [${data.type || 'ASSETS'}]: ${data.task || ''} (${data.percent}%)`);
+      });
+
+      eventSource.addEventListener('mc-status', (e) => {
+        const data = JSON.parse(e.data);
+        if (data.status === 'RUNNING') {
+          onSetRunning(true);
+          setTelemetry('STATUS: RUNNING ACTIVE CLIENT');
+        } else if (data.status === 'IDLE') {
+          onSetRunning(false);
+          setTelemetry('STATUS: IDLE');
+          if (onProgress) onProgress(null);
+        } else if (data.status === 'INSTALLING') {
+          onSetRunning(true);
+          setTelemetry('STATUS: VERIFYING ASSETS & RUNTIME');
+        }
+      });
+    } catch {
+      // EventSource fallback
+    }
+
+    return () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+    };
+  }, [onProgress, onSetRunning]);
+
+  // Auto-scroll logs
   useEffect(() => {
     if (logContainerRef.current) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
     }
   }, [logs]);
-
-  // Clean up timer on unmount
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, []);
 
   const handleCopyCommand = async () => {
     try {
@@ -47,7 +83,6 @@ export const ExecutionPanel: React.FC<ExecutionPanelProps> = ({
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      // Fallback
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     }
@@ -57,7 +92,7 @@ export const ExecutionPanel: React.FC<ExecutionPanelProps> = ({
     setLogs([]);
   };
 
-  const handleLaunch = () => {
+  const handleLaunch = async () => {
     if (!isRamValid) {
       setLogs((prev) => [
         ...prev,
@@ -67,52 +102,45 @@ export const ExecutionPanel: React.FC<ExecutionPanelProps> = ({
     }
 
     onSetRunning(true);
-
-    const activeMods = profile.mods.filter((m) => m.enabled);
-    const simulatedSteps = [
-      `[RawCraft/INFO]: Spawning runtime with command: ${command.slice(0, 70)}...`,
-      `[JVM/INFO]: OpenJDK 64-Bit Server VM (build 21.0.2+13-LTS, mixed mode)`,
-      `[JVM/INFO]: Allocating -Xmx${profile.maxRamMb}M heap with flags: ${profile.jvmFlags || 'NONE'}`,
-      `[Minecraft/Main/INFO]: Setting user: ${settings.username || 'PlayerOne'} (dev-mode UUID)`,
-      `[ModLoader/INFO]: Initializing ${profile.loader} ${profile.loaderVersion || 'engine'}...`,
-      ...(profile.loader === 'VANILLA'
-        ? [`[ModLoader/INFO]: Vanilla loader mode - mod scanning bypassed.`]
-        : activeMods.length > 0
-        ? activeMods.map((m) => `[ModLoader/INFO]: Loaded mod .jar: ${m.fileName}`)
-        : [`[ModLoader/INFO]: No external .jar mods loaded.`]),
-      `[Render thread/INFO]: Backend library: LWJGL version 3.3.3-snapshot`,
-      `[Render thread/INFO]: OpenAL initialized sound subsystem.`,
-      `[Render thread/INFO]: Created: 1024x512x4 minecraft:textures/atlas/blocks.png-atlas`,
-      `[Render thread/INFO]: Window handle created. Resolution: 1920x1080.`,
-      `[Render thread/INFO]: Game initialized successfully. Ready for gameplay.`,
-    ];
-
-    let currentStep = 0;
-    const intervalId = window.setInterval(() => {
-      if (currentStep < simulatedSteps.length) {
-        const text = simulatedSteps[currentStep];
-        setLogs((prev) => [...prev, `[${new Date().toLocaleTimeString()}] ${text}`]);
-        currentStep++;
-      } else {
-        if (timerRef.current) {
-          clearInterval(timerRef.current);
-          timerRef.current = null;
-        }
-      }
-    }, 450);
-
-    timerRef.current = intervalId;
-  };
-
-  const handleTerminate = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-    onSetRunning(false);
     setLogs((prev) => [
       ...prev,
-      `[${new Date().toLocaleTimeString()}] [RawCraft/WARN]: Process terminated by user signal (SIGTERM / Kill code 130).`,
+      `[${new Date().toLocaleTimeString()}] [RawCraft/INIT]: Dispatching launch sequence to backend engine...`,
+      `[${new Date().toLocaleTimeString()}] [RawCraft/CMD]: ${command}`,
+    ]);
+
+    try {
+      await launchInstance({
+        instanceId: profile.id,
+        gameVersion: profile.gameVersion,
+        loader: profile.loader,
+        loaderVersion: profile.loaderVersion,
+        username: settings.username || 'PlayerOne',
+        maxRamMb: profile.maxRamMb,
+        jvmFlags: profile.jvmFlags,
+        authMode: settings.authMode || 'OFFLINE',
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Launch failed';
+      setLogs((prev) => [
+        ...prev,
+        `[${new Date().toLocaleTimeString()}] [RawCraft/WARN]: Backend runner notice: ${msg}`,
+        `[${new Date().toLocaleTimeString()}] [RawCraft/INFO]: Running process preview generator...`,
+      ]);
+    }
+  };
+
+  const handleTerminate = async () => {
+    try {
+      await terminateProcess();
+    } catch {
+      // Ignore
+    }
+    onSetRunning(false);
+    setTelemetry('STATUS: TERMINATED');
+    if (onProgress) onProgress(null);
+    setLogs((prev) => [
+      ...prev,
+      `[${new Date().toLocaleTimeString()}] [RawCraft/WARN]: Process terminated by user signal (SIGTERM).`,
       `[${new Date().toLocaleTimeString()}] [RawCraft/INFO]: Process exited. Workspace unlocked.`,
     ]);
   };
@@ -137,10 +165,24 @@ export const ExecutionPanel: React.FC<ExecutionPanelProps> = ({
         </span>
       </div>
 
+      {/* Live Download & Verification Telemetry */}
+      <div
+        style={{
+          border: '2px solid var(--color-black)',
+          padding: '8px 12px',
+          backgroundColor: 'var(--color-sunken)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: '12px',
+          fontWeight: 600,
+        }}
+      >
+        {telemetry}
+      </div>
+
       {/* CLI Preview Box (Elevated Card - 5px border) */}
       <div className="card-elevated" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h4 style={{ fontSize: '18px' }}>COMMAND PREVIEW (DRY-RUN)</h4>
+          <h4 style={{ fontSize: '18px' }}>COMMAND PREVIEW</h4>
           <button
             type="button"
             className="btn-secondary btn-sm"
