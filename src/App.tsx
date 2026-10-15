@@ -1,168 +1,134 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { LauncherState, Profile } from './types/launcher';
+import { loadLauncherState, saveLauncherState } from './utils/storage';
+import { Header } from './components/Header';
+import { ProfileSidebar } from './components/ProfileSidebar';
 
 export default function App() {
-  const [filter, setFilter] = useState('ALL');
-  const [activeProfile, setActiveProfile] = useState('prof-1');
-  const [radioVal, setRadioVal] = useState('FABRIC');
-  const [checkboxVal, setCheckboxVal] = useState(true);
+  const [state, setState] = useState<LauncherState>(() => loadLauncherState());
+  const [isRunning] = useState(false);
+
+  // Sync state changes to storage
+  useEffect(() => {
+    saveLauncherState(state);
+  }, [state]);
+
+  const activeProfile =
+    state.profiles.find((p) => p.id === state.activeProfileId) || state.profiles[0];
+
+  const handleSelectProfile = (id: string) => {
+    setState((prev) => ({ ...prev, activeProfileId: id }));
+  };
+
+  const handleAddProfile = () => {
+    const newId = `prof-${Date.now().toString().slice(-4)}`;
+    const newProfile: Profile = {
+      id: newId,
+      name: `NEW INSTANCE // ${newId}`,
+      gameVersion: '1.21.4',
+      loader: 'FABRIC',
+      loaderVersion: '0.16.9',
+      maxRamMb: 4096,
+      jvmFlags: '-XX:+UseG1GC',
+      gameDir: `/instances/${newId}`,
+      mods: [],
+    };
+
+    setState((prev) => ({
+      ...prev,
+      activeProfileId: newId,
+      profiles: [...prev.profiles, newProfile],
+    }));
+  };
+
+  const handleDeleteProfile = (id: string) => {
+    if (state.profiles.length <= 1) return;
+    const remaining = state.profiles.filter((p) => p.id !== id);
+    setState((prev) => ({
+      ...prev,
+      activeProfileId: remaining[0].id,
+      profiles: remaining,
+    }));
+  };
+
+  const handleUpdateSettings = (settings: LauncherState['globalSettings']) => {
+    setState((prev) => ({ ...prev, globalSettings: settings }));
+  };
 
   return (
-    <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '40px' }}>
-      <div>
-        <h1>RAWCRAFT // KITCHEN SINK</h1>
-        <p className="mono-text" style={{ marginTop: '8px' }}>RAWBLOCK DESIGN SYSTEM COMPONENT VERIFICATION</p>
-      </div>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh',
+        width: '100vw',
+        overflow: 'hidden',
+        backgroundColor: 'var(--color-white)',
+      }}
+    >
+      <Header
+        settings={state.globalSettings}
+        onUpdateSettings={handleUpdateSettings}
+        isRunning={isRunning}
+      />
 
-      {/* Buttons */}
-      <section className="card">
-        <h2 style={{ marginBottom: '24px' }}>01 // BUTTONS</h2>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
-          <button className="btn-primary btn-lg">PRIMARY LG</button>
-          <button className="btn-primary btn-md">PRIMARY MD</button>
-          <button className="btn-primary btn-sm">PRIMARY SM</button>
-          <button className="btn-primary btn-md" disabled>PRIMARY DIS</button>
+      <main
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '320px 1.2fr 1.2fr',
+          flex: 1,
+          overflow: 'hidden',
+        }}
+      >
+        {/* Left Column: 01 // PROFILES */}
+        <ProfileSidebar
+          profiles={state.profiles}
+          activeProfileId={state.activeProfileId}
+          onSelectProfile={handleSelectProfile}
+          onAddProfile={handleAddProfile}
+          onDeleteProfile={handleDeleteProfile}
+          isRunning={isRunning}
+        />
 
-          <button className="btn-secondary btn-md">SECONDARY</button>
-          <button className="btn-secondary btn-md" disabled>SEC DIS</button>
-
-          <button className="btn-destructive btn-md">DESTRUCTIVE</button>
-          <button className="btn-destructive btn-md" disabled>DEST DIS</button>
-
-          <button className="btn-ghost">GHOST LINK</button>
-          <button className="btn-ghost" disabled>GHOST DIS</button>
-        </div>
-      </section>
-
-      {/* Inputs & Labels */}
-      <section className="card">
-        <h2 style={{ marginBottom: '24px' }}>02 // INPUTS</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-          <div>
-            <label className="input-label">DEFAULT INPUT</label>
-            <input className="input-field" placeholder="Space Mono 15px..." defaultValue="PlayerOne" />
-            <div className="helper-text">Regular input with 3px border, expands to 5px on focus.</div>
-          </div>
-          <div>
-            <label className="input-label">ERROR INPUT</label>
-            <input className="input-field error" defaultValue="99999" />
-            <div className="helper-text error">Error state: 3px solid #FF0000 border.</div>
-          </div>
-          <div>
-            <label className="input-label">DISABLED INPUT</label>
-            <input className="input-field" disabled defaultValue="Fixed System Param" />
-            <div className="helper-text">Disabled state: #F5F5F5 bg, #CCCCCC border.</div>
-          </div>
-        </div>
-      </section>
-
-      {/* Chips */}
-      <section className="card">
-        <h2 style={{ marginBottom: '24px' }}>03 // CHIPS</h2>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px' }}>
-          {['ALL', 'VANILLA', 'FABRIC', 'FORGE'].map(f => (
-            <span
-              key={f}
-              className={`chip-filter ${filter === f ? 'active' : ''}`}
-              onClick={() => setFilter(f)}
-            >
-              {f}
-            </span>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <span className="chip-status active">ACTIVE // 008000</span>
-          <span className="chip-status warning">WARN // FFA500</span>
-          <span className="chip-status error">ERROR // FF0000</span>
-          <span className="chip-status default">IDLE // 000000</span>
-        </div>
-      </section>
-
-      {/* Selection Primitives (Checkboxes & Radios) */}
-      <section className="card">
-        <h2 style={{ marginBottom: '24px' }}>04 // CHECKBOX & RADIO</h2>
-        <div style={{ display: 'flex', gap: '40px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h4 style={{ marginBottom: '8px' }}>CHECKBOXES (0PX RADIUS)</h4>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                className="raw-checkbox"
-                checked={checkboxVal}
-                onChange={e => setCheckboxVal(e.target.checked)}
-              />
-              <span className="mono-text">sodium-fabric-0.6.0.jar</span>
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'not-allowed' }}>
-              <input type="checkbox" className="raw-checkbox" disabled checked />
-              <span className="mono-text" style={{ color: '#888' }}>disabled-checked.jar</span>
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'not-allowed' }}>
-              <input type="checkbox" className="raw-checkbox" disabled />
-              <span className="mono-text" style={{ color: '#888' }}>disabled-unchecked.jar</span>
-            </label>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h4 style={{ marginBottom: '8px' }}>RADIOS (50% CIRCLE EXCEPTION)</h4>
-            {['VANILLA', 'FABRIC', 'NEOFORGE'].map(eng => (
-              <label key={eng} style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="engine"
-                  className="raw-radio"
-                  checked={radioVal === eng}
-                  onChange={() => setRadioVal(eng)}
-                />
-                <span className="mono-text">{eng}</span>
-              </label>
-            ))}
-            <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'not-allowed' }}>
-              <input type="radio" name="engine-dis" className="raw-radio" disabled checked />
-              <span className="mono-text" style={{ color: '#888' }}>QUILT (DISABLED)</span>
-            </label>
-          </div>
-        </div>
-      </section>
-
-      {/* Lists & Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-        <section className="card">
-          <h3 style={{ marginBottom: '16px' }}>DEFAULT CARD (3PX BORDER)</h3>
-          <ul className="raw-list">
-            <li
-              className={`raw-list-item ${activeProfile === 'prof-1' ? 'active' : ''}`}
-              onClick={() => setActiveProfile('prof-1')}
-            >
-              <span>FABRIC // TECH-01</span>
-              <span className="tiny-text">1.21.4</span>
-            </li>
-            <li
-              className={`raw-list-item ${activeProfile === 'prof-2' ? 'active' : ''}`}
-              onClick={() => setActiveProfile('prof-2')}
-            >
-              <span>VANILLA // SURVIVAL</span>
-              <span className="tiny-text">1.21.4</span>
-            </li>
-            <li
-              className={`raw-list-item ${activeProfile === 'prof-3' ? 'active' : ''}`}
-              onClick={() => setActiveProfile('prof-3')}
-            >
-              <span>NEOFORGE // MODDED</span>
-              <span className="tiny-text">1.20.1</span>
-            </li>
-          </ul>
-        </section>
-
-        <section className="card-elevated">
-          <h3 style={{ marginBottom: '16px' }}>ELEVATED CARD (5PX BORDER)</h3>
-          <p className="mono-text" style={{ marginBottom: '16px' }}>
-            Command Preview / Priority Status
-          </p>
-          <div className="raw-tooltip">
-            TOOLTIP: 0px radius, black fill, Space Mono 13px.
+        {/* Center Column: 02 // CONFIGURATION & MODULES (Placeholder for Step 4) */}
+        <section
+          style={{
+            borderRight: '3px solid var(--color-black)',
+            padding: '24px',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '24px',
+          }}
+        >
+          <h3>02 // CONFIGURATION & MODULES</h3>
+          <div className="card">
+            <h4 style={{ marginBottom: '8px' }}>ACTIVE PROFILE: {activeProfile?.name}</h4>
+            <p className="mono-text tiny-text" style={{ color: 'var(--color-disabled-text)' }}>
+              Configuration panel loading in Step 4...
+            </p>
           </div>
         </section>
-      </div>
+
+        {/* Right Column: 03 // EXECUTION & STDOUT (Placeholder for Step 5) */}
+        <section
+          style={{
+            padding: '24px',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '24px',
+          }}
+        >
+          <h3>03 // EXECUTION & STDOUT</h3>
+          <div className="card-elevated">
+            <h4 style={{ marginBottom: '8px' }}>RUN CONTROLLER</h4>
+            <p className="mono-text tiny-text" style={{ color: 'var(--color-disabled-text)' }}>
+              Execution console loading in Step 5...
+            </p>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
