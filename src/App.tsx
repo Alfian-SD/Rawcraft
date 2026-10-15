@@ -3,6 +3,7 @@ import { LauncherState, Profile } from './types/launcher';
 import { loadLauncherState, saveLauncherState } from './utils/storage';
 import { Header } from './components/Header';
 import { ProfileSidebar } from './components/ProfileSidebar';
+import { ProfileConfig } from './components/ProfileConfig';
 
 export default function App() {
   const [state, setState] = useState<LauncherState>(() => loadLauncherState());
@@ -55,6 +56,13 @@ export default function App() {
     setState((prev) => ({ ...prev, globalSettings: settings }));
   };
 
+  const handleUpdateProfile = (updated: Profile) => {
+    setState((prev) => ({
+      ...prev,
+      profiles: prev.profiles.map((p) => (p.id === updated.id ? updated : p)),
+    }));
+  };
+
   return (
     <div
       style={{
@@ -90,25 +98,12 @@ export default function App() {
           isRunning={isRunning}
         />
 
-        {/* Center Column: 02 // CONFIGURATION & MODULES (Placeholder for Step 4) */}
-        <section
-          style={{
-            borderRight: '3px solid var(--color-black)',
-            padding: '24px',
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '24px',
-          }}
-        >
-          <h3>02 // CONFIGURATION & MODULES</h3>
-          <div className="card">
-            <h4 style={{ marginBottom: '8px' }}>ACTIVE PROFILE: {activeProfile?.name}</h4>
-            <p className="mono-text tiny-text" style={{ color: 'var(--color-disabled-text)' }}>
-              Configuration panel loading in Step 4...
-            </p>
-          </div>
-        </section>
+        {/* Center Column: 02 // CONFIGURATION & MODULES */}
+        <ProfileConfig
+          profile={activeProfile}
+          onUpdateProfile={handleUpdateProfile}
+          isRunning={isRunning}
+        />
 
         {/* Right Column: 03 // EXECUTION & STDOUT (Placeholder for Step 5) */}
         <section
