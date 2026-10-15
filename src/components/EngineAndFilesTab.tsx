@@ -4,6 +4,7 @@ import { validateRam } from '../utils/buildCommand';
 import {
   fetchInstanceFiles,
   toggleInstanceFile,
+  detectJava,
   InstanceFile,
 } from '../api/instanceClient';
 
@@ -23,9 +24,28 @@ export const EngineAndFilesTab: React.FC<EngineAndFilesTabProps> = ({
   const [subfolder, setSubfolder] = useState<FileSubfolder>('mods');
   const [diskFiles, setDiskFiles] = useState<InstanceFile[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
+  const [detectedJava, setDetectedJava] = useState<{
+    requiredVersion: number;
+    detectedPath: string | null;
+    source: string | null;
+  } | null>(null);
 
   const isVanilla = profile.loader === 'VANILLA';
   const isRamValid = validateRam(profile.maxRamMb);
+
+  useEffect(() => {
+    detectJava(profile.gameVersion).then((res) => setDetectedJava(res));
+  }, [profile.gameVersion]);
+
+  const handleAutoDetectJava = async () => {
+    const res = await detectJava(profile.gameVersion);
+    setDetectedJava(res);
+    if (res.detectedPath) {
+      onUpdateProfile({ ...profile, javaPath: res.detectedPath });
+    } else {
+      onUpdateProfile({ ...profile, javaPath: '' });
+    }
+  };
 
   // Load disk files for current instance and subfolder
   const loadFiles = async () => {
@@ -179,6 +199,40 @@ export const EngineAndFilesTab: React.FC<EngineAndFilesTabProps> = ({
             placeholder="-XX:+UseG1GC -XX:+ParallelRefProcEnabled"
           />
           <div className="helper-text">Appended directly to the Java runtime arguments.</div>
+        </div>
+
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+            <label className="input-label" style={{ marginBottom: 0 }}>
+              JAVA EXECUTABLE PATH (AUTO OR CUSTOM)
+            </label>
+            <button
+              type="button"
+              className="btn-secondary btn-sm"
+              onClick={handleAutoDetectJava}
+              disabled={isRunning}
+            >
+              [AUTO-DETECT / RESET]
+            </button>
+          </div>
+          <input
+            className="input-field"
+            value={profile.javaPath || ''}
+            disabled={isRunning}
+            onChange={(e) => onUpdateProfile({ ...profile, javaPath: e.target.value })}
+            placeholder={
+              detectedJava?.detectedPath
+                ? `Auto-detected: ${detectedJava.detectedPath}`
+                : `Auto-Download: Adoptium Temurin JRE ${detectedJava?.requiredVersion || 21}`
+            }
+          />
+          <div className="helper-text">
+            {profile.javaPath
+              ? `Custom path active: ${profile.javaPath}`
+              : detectedJava?.detectedPath
+              ? `Using ${detectedJava.source}: ${detectedJava.detectedPath}`
+              : `No local Java ${detectedJava?.requiredVersion || 21} found. RawCraft will auto-download portable JRE on launch.`}
+          </div>
         </div>
       </div>
 

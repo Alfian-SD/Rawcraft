@@ -17,6 +17,7 @@ export interface Profile {
   maxRamMb: number;
   jvmFlags: string;
   gameDir: string;
+  javaPath?: string;
   mods: ModItem[];
 }
 

@@ -4,6 +4,11 @@ import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import AdmZip from 'adm-zip';
 import mclc from 'minecraft-launcher-core';
+import {
+  resolveJavaPath,
+  detectSystemJava,
+  getRequiredJavaVersion,
+} from './javaManager.mjs';
 
 const { Client, Authenticator } = mclc;
 
@@ -164,11 +169,23 @@ export async function launchInstance(config) {
   const launcher = new Client();
   const auth = Authenticator.getAuth(username || 'PlayerOne');
 
+  // Resolve or Auto-Download Java Runtime
+  broadcastEvent('mc-console', `[RawCraft/JRE]: Resolving Java runtime for Minecraft ${gameVersion}...`);
+  const resolvedJavaPath = await resolveJavaPath(
+    config.javaPath,
+    gameVersion,
+    (msg) => broadcastEvent('mc-console', msg),
+    (prog) => broadcastEvent('mc-progress', prog)
+  );
+
+  broadcastEvent('mc-console', `[RawCraft/JRE]: JVM Executable: ${resolvedJavaPath}`);
+
   const customJvm = jvmFlags.split(' ').map((s) => s.trim()).filter(Boolean);
 
   const launchOpts = {
     authorization: auth,
     root: instanceDir,
+    javaPath: resolvedJavaPath,
     version: {
       number: gameVersion,
       type: 'release',
@@ -270,6 +287,21 @@ export function createEngineMiddleware() {
     res.setHeader('Content-Type', 'application/json');
 
     try {
+      // GET /api/java/detect?version=...
+      if (req.method === 'GET' && url.pathname === '/api/java/detect') {
+        const version = url.searchParams.get('version') || '1.21.4';
+        const reqVer = getRequiredJavaVersion(version);
+        const detected = detectSystemJava(reqVer);
+        res.end(
+          JSON.stringify({
+            requiredVersion: reqVer,
+            detectedPath: detected?.path || null,
+            source: detected?.source || null,
+          })
+        );
+        return;
+      }
+
       // GET /api/instances/:id/files?subfolder=...
       const matchFiles = url.pathname.match(/^\/api\/instances\/([^/]+)\/files$/);
       if (req.method === 'GET' && matchFiles) {

@@ -76,3 +76,19 @@ export async function terminateProcess(): Promise<boolean> {
     return false;
   }
 }
+
+export async function detectJava(version = '1.21.4'): Promise<{
+  requiredVersion: number;
+  detectedPath: string | null;
+  source: string | null;
+}> {
+  try {
+    const res = await fetch(`/api/java/detect?version=${encodeURIComponent(version)}`);
+    if (!res.ok) {
+      return { requiredVersion: 21, detectedPath: null, source: null };
+    }
+    return await res.json();
+  } catch {
+    return { requiredVersion: 21, detectedPath: null, source: null };
+  }
+}

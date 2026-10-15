@@ -117,6 +117,7 @@ export const ExecutionPanel: React.FC<ExecutionPanelProps> = ({
         username: settings.username || 'PlayerOne',
         maxRamMb: profile.maxRamMb,
         jvmFlags: profile.jvmFlags,
+        javaPath: profile.javaPath || settings.javaPath,
         authMode: settings.authMode || 'OFFLINE',
       });
     } catch (err: unknown) {

@@ -5,7 +5,7 @@ export function validateRam(ramMb: number): boolean {
 }
 
 export function buildCommand(profile: Profile, settings: GlobalSettings): string {
-  const java = settings.javaPath?.trim() || 'java';
+  const java = profile.javaPath?.trim() || settings.javaPath?.trim() || 'java';
   const ramFlag = `-Xmx${profile.maxRamMb}M`;
   const jvmFlags = profile.jvmFlags?.trim() ? profile.jvmFlags.trim() : '';
 
