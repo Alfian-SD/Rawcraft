@@ -1,0 +1,487 @@
+/* RawBlock Design System Tokens */
+:root {
+  --color-black: #000000;
+  --color-white: #FFFFFF;
+  --color-blue: #0000FF;
+  --color-sunken: #F0F0F0;
+  --color-hover: #E8E8E8;
+  --color-disabled-bg: #F5F5F5;
+  --color-disabled-border: #CCCCCC;
+  --color-disabled-text: #888888;
+  --color-success: #008000;
+  --color-warning: #FFA500;
+  --color-error: #FF0000;
+
+  --font-headline: 'Archivo Black', sans-serif;
+  --font-body: 'Work Sans', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 16px;
+  --sp-4: 24px;
+  --sp-5: 40px;
+  --sp-6: 64px;
+  --sp-7: 80px;
+  --sp-8: 120px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border-radius: 0px !important;
+}
+
+/* Radio button is the ONLY exception to 0px border-radius */
+input[type="radio"].raw-radio,
+.raw-radio {
+  border-radius: 50% !important;
+}
+
+body {
+  background-color: var(--color-white);
+  color: var(--color-black);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Typography Primitives */
+h1, .h1 {
+  font-family: var(--font-headline);
+  font-size: 64px;
+  line-height: 1.0;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+h2, .h2 {
+  font-family: var(--font-headline);
+  font-size: 48px;
+  line-height: 1.05;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+h3, .h3 {
+  font-family: var(--font-headline);
+  font-size: 32px;
+  line-height: 1.1;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+h4, .h4 {
+  font-family: var(--font-body);
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+.body-text {
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.small-text {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.tiny-text {
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.mono-text {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* BUTTONS */
+button, .btn {
+  font-family: var(--font-headline);
+  font-size: 14px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--color-black);
+  background: transparent;
+  color: var(--color-black);
+  transition: none;
+}
+
+/* Button Sizes */
+.btn-sm {
+  padding: 6px 16px;
+  font-size: 12px;
+  min-height: 32px;
+}
+
+.btn-md {
+  padding: 10px 24px;
+  font-size: 14px;
+  min-height: 44px;
+}
+
+.btn-lg {
+  padding: 16px 40px;
+  font-size: 18px;
+  min-height: 56px;
+}
+
+/* Button Variants */
+.btn-primary {
+  background-color: var(--color-black);
+  color: var(--color-white);
+  border: 3px solid var(--color-black);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-white);
+  color: var(--color-black);
+}
+
+.btn-primary:active:not(:disabled) {
+  background-color: var(--color-black);
+  color: var(--color-white);
+  border: 5px solid var(--color-black);
+}
+
+.btn-secondary {
+  background-color: var(--color-white);
+  color: var(--color-black);
+  border: 3px solid var(--color-black);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-black);
+  color: var(--color-white);
+}
+
+.btn-secondary:active:not(:disabled) {
+  background-color: var(--color-white);
+  color: var(--color-black);
+  border: 5px solid var(--color-black);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--color-black);
+  border: none;
+  text-decoration: underline;
+  padding: 6px 12px;
+  letter-spacing: 1px;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  color: var(--color-blue);
+}
+
+.btn-ghost:active:not(:disabled) {
+  color: var(--color-black);
+}
+
+.btn-destructive {
+  background-color: var(--color-error);
+  color: var(--color-white);
+  border: 3px solid var(--color-black);
+}
+
+.btn-destructive:hover:not(:disabled) {
+  background-color: var(--color-black);
+  color: var(--color-error);
+}
+
+.btn-destructive:active:not(:disabled) {
+  background-color: var(--color-error);
+  color: var(--color-white);
+  border: 5px solid var(--color-black);
+}
+
+/* Disabled Button State */
+button:disabled,
+.btn:disabled,
+.btn.disabled {
+  background-color: var(--color-sunken) !important;
+  color: var(--color-disabled-text) !important;
+  border: 3px solid var(--color-disabled-border) !important;
+  cursor: not-allowed !important;
+  text-decoration: none !important;
+}
+
+/* CARDS */
+.card {
+  background-color: var(--color-white);
+  border: 3px solid var(--color-black);
+  padding: var(--sp-4);
+}
+
+.card-elevated {
+  background-color: var(--color-white);
+  border: 5px solid var(--color-black);
+  padding: var(--sp-4);
+}
+
+/* INPUTS */
+.input-label {
+  display: block;
+  font-family: var(--font-headline);
+  font-size: 14px;
+  color: var(--color-black);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.input-field {
+  width: 100%;
+  background-color: var(--color-sunken);
+  color: var(--color-black);
+  border: 3px solid var(--color-black);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  padding: 10px 12px;
+  outline: none;
+}
+
+.input-field:hover:not(:disabled) {
+  background-color: var(--color-hover);
+  border: 3px solid var(--color-black);
+}
+
+.input-field:focus {
+  border: 5px solid var(--color-black);
+  outline: none;
+}
+
+.input-field.error {
+  border: 3px solid var(--color-error);
+}
+
+.input-field.error:focus {
+  border: 5px solid var(--color-error);
+}
+
+.input-field:disabled {
+  background-color: var(--color-disabled-bg);
+  border: 3px solid var(--color-disabled-border);
+  color: var(--color-disabled-text);
+  cursor: not-allowed;
+}
+
+.helper-text {
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.4;
+  margin-top: 4px;
+  color: var(--color-black);
+}
+
+.helper-text.error {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+/* CHIPS */
+.chip-filter {
+  background-color: var(--color-white);
+  color: var(--color-black);
+  border: 2px solid var(--color-black);
+  padding: 4px 12px;
+  font-family: var(--font-headline);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  display: inline-block;
+}
+
+.chip-filter:hover {
+  background-color: var(--color-black);
+  color: var(--color-white);
+}
+
+.chip-filter.active {
+  background-color: var(--color-black);
+  color: var(--color-white);
+}
+
+.chip-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-white);
+  color: var(--color-black);
+  border: 2px solid var(--color-black);
+  padding: 2px 10px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.chip-status.active {
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.chip-status.warning {
+  color: var(--color-warning);
+  border-color: var(--color-warning);
+}
+
+.chip-status.error {
+  color: var(--color-error);
+  border-color: var(--color-error);
+}
+
+.chip-status.default {
+  color: var(--color-black);
+  border-color: var(--color-black);
+}
+
+/* LISTS */
+.raw-list {
+  list-style: none;
+  width: 100%;
+}
+
+.raw-list-item {
+  background: transparent;
+  color: var(--color-black);
+  font-family: var(--font-body);
+  font-size: 16px;
+  border-bottom: 3px solid var(--color-black);
+  padding: 12px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.raw-list-item:hover {
+  text-decoration: underline;
+}
+
+.raw-list-item.active {
+  background-color: var(--color-black);
+  color: var(--color-white);
+  text-decoration: none;
+}
+
+/* CHECKBOXES (20x20px, 3px border, square) */
+.raw-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  border: 3px solid var(--color-black);
+  background-color: var(--color-white);
+  cursor: pointer;
+  display: inline-block;
+  vertical-align: middle;
+  position: relative;
+  padding: 0;
+  margin: 0;
+}
+
+.raw-checkbox:checked {
+  background-color: var(--color-black);
+}
+
+.raw-checkbox:checked::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 4px;
+  width: 5px;
+  height: 9px;
+  border: solid var(--color-white);
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+}
+
+.raw-checkbox:focus {
+  border: 5px solid var(--color-black);
+  outline: none;
+}
+
+.raw-checkbox:disabled {
+  border-color: var(--color-disabled-border) !important;
+  background-color: var(--color-disabled-bg) !important;
+  cursor: not-allowed !important;
+}
+
+.raw-checkbox:disabled:checked::after {
+  border-color: var(--color-disabled-border);
+}
+
+/* RADIO BUTTONS (20x20px, 3px border, 50% circle) */
+.raw-radio {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  border: 3px solid var(--color-black);
+  border-radius: 50% !important;
+  background-color: var(--color-white);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  position: relative;
+  padding: 0;
+  margin: 0;
+}
+
+.raw-radio:checked::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50% !important;
+  background-color: var(--color-black);
+}
+
+.raw-radio:focus {
+  border: 5px solid var(--color-black);
+  outline: none;
+}
+
+.raw-radio:disabled {
+  border-color: var(--color-disabled-border) !important;
+  background-color: var(--color-disabled-bg) !important;
+  cursor: not-allowed !important;
+}
+
+.raw-radio:disabled:checked::after {
+  background-color: var(--color-disabled-border);
+}
+
+/* TOOLTIPS */
+.raw-tooltip {
+  background-color: var(--color-black);
+  color: var(--color-white);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 8px 12px;
+  max-width: 260px;
+  display: inline-block;
+  line-height: 1.4;
+}
