@@ -130,6 +130,13 @@ public class RawCraftMenuScreen extends Screen {
         rebuildUI();
     }
 
+    public void setActiveTab(Tab tab) {
+        this.activeTab = tab;
+        this.scrollY = 0;
+        this.expandedHudWidget = null;
+        rebuildUI();
+    }
+
     private void rebuildUI() {
         buttons.clear();
         toggles.clear();
@@ -633,6 +640,18 @@ public class RawCraftMenuScreen extends Screen {
         extractor.fill(px, py + 28, px + sideW, py + ph - 22, RawCraftTheme.BG_SURFACE);
         extractor.fill(px + sideW - 1, py + 28, px + sideW, py + ph - 22, RawCraftTheme.BORDER_SUBTLE);
 
+        int contentX = px + 104;
+        int contentY = py + 30;
+        int contentW = pw - 108;
+        int contentH = ph - 54;
+
+        // Render Sidebar and Header buttons (outside scissor)
+        for (RawCraftButton btn : buttons) {
+            if (btn.x < contentX || btn.y < contentY) {
+                btn.render(extractor, font, mouseX, mouseY);
+            }
+        }
+
         // 5. Footer Bar
         extractor.fill(px, py + ph - 22, px + pw, py + ph, 0xFF160F2B);
         extractor.fill(px, py + ph - 22, px + pw, py + ph - 21, RawCraftTheme.BORDER_SUBTLE);
@@ -652,11 +671,6 @@ public class RawCraftMenuScreen extends Screen {
         }
 
         // 6. Content Area Scissor & Custom Card Backgrounds
-        int contentX = px + 104;
-        int contentY = py + 30;
-        int contentW = pw - 108;
-        int contentH = ph - 54;
-
         extractor.enableScissor(contentX, contentY, contentW, contentH);
 
         int curY = contentY - scrollY;
@@ -675,7 +689,7 @@ public class RawCraftMenuScreen extends Screen {
 
         // Render interactive components inside scissored area
         for (RawCraftButton btn : buttons) {
-            if (btn.y >= contentY - 30 && btn.y <= contentY + contentH + 30) {
+            if (btn.x >= contentX && btn.y >= contentY - 30 && btn.y <= contentY + contentH + 30) {
                 btn.render(extractor, font, mouseX, mouseY);
             }
         }

@@ -72,4 +72,106 @@ public class KeyboardMixin {
             }
         }
     }
+
+    private int qaTickCounter = 0;
+
+    @Inject(method = "tick", at = @At("RETURN"), require = 0)
+    private void onKeyboardTick(CallbackInfo ci) {
+        qaTickCounter++;
+        if (qaTickCounter % 5 != 0) return;
+
+        if (this.minecraft == null || this.minecraft.gameDirectory == null) return;
+        java.io.File qaFile = new java.io.File(this.minecraft.gameDirectory, "rawcraft_qa.txt");
+        if (!qaFile.exists()) return;
+
+        try {
+            java.util.List<String> lines = java.nio.file.Files.readAllLines(qaFile.toPath());
+            qaFile.delete();
+
+            for (String rawCmd : lines) {
+                String cmd = rawCmd.trim();
+                if (cmd.isEmpty() || cmd.startsWith("#")) continue;
+                RawCraftLogger.info("[QA Action]: Executing: " + cmd);
+
+                String[] parts = cmd.split(" ");
+                String action = parts[0].toLowerCase();
+
+                switch (action) {
+                    case "diag": {
+                        RawCraftLogger.info("-------------------- /rawcraft diag --------------------");
+                        for (com.rawcraft.client.module.Module m : ModuleManager.getInstance().getModules()) {
+                            RawCraftLogger.info("  Module [" + m.getId() + "] " + m.getName() + " -> " + m.getStatus() + " (enabled=" + m.isEnabled() + ")");
+                        }
+                        for (com.rawcraft.client.hud.HudWidget w : com.rawcraft.client.hud.HudManager.getInstance().getWidgets()) {
+                            RawCraftLogger.info("  HUD [" + w.getName() + "] -> anchor=" + w.getAnchor() + ", offset=(" + w.getOffsetX() + "," + w.getOffsetY() + "), enabled=" + w.isEnabled());
+                        }
+                        RawCraftLogger.info("  Performance Profile -> " + com.rawcraft.client.performance.PerformanceManager.getInstance().getCurrentProfile());
+                        RawCraftLogger.info("-------------------------------------------------------");
+                        break;
+                    }
+                    case "screenshot": {
+                        net.minecraft.client.Screenshot.grab(this.minecraft, false);
+                        RawCraftLogger.info("[QA Screenshot Captured via Screenshot.grab]");
+                        break;
+                    }
+                    case "open_menu": {
+                        RawCraftMenuScreen.openScreen(new RawCraftMenuScreen(null));
+                        RawCraftLogger.info("[QA Action]: Opened RawCraftMenuScreen");
+                        break;
+                    }
+                    case "open_editor": {
+                        RawCraftMenuScreen.openScreen(new HudEditorScreen(null));
+                        RawCraftLogger.info("[QA Action]: Opened HudEditorScreen");
+                        break;
+                    }
+                    case "close_screen": {
+                        RawCraftMenuScreen.openScreen(null);
+                        RawCraftLogger.info("[QA Action]: Closed active screen");
+                        break;
+                    }
+                    case "tab": {
+                        if (parts.length > 1) {
+                            String tabName = parts[1].toUpperCase();
+                            Screen cur = RawCraftMenuScreen.getCurrentScreen();
+                            if (cur instanceof RawCraftMenuScreen menu) {
+                                try {
+                                    RawCraftMenuScreen.Tab tab = RawCraftMenuScreen.Tab.valueOf(tabName);
+                                    menu.setActiveTab(tab);
+                                    RawCraftLogger.info("[QA Action]: Switched menu tab to " + tab);
+                                } catch (Exception e) {
+                                    RawCraftLogger.error("Unknown tab: " + tabName);
+                                }
+                            }
+                        }
+                        break;
+                    }
+                    case "toggle": {
+                        if (parts.length > 1) {
+                            String modId = parts[1].toLowerCase();
+                            ModuleManager.getInstance().toggleModule(modId);
+                            RawCraftLogger.info("[QA Action]: Toggled module " + modId);
+                        }
+                        break;
+                    }
+                    case "profile": {
+                        if (parts.length > 1) {
+                            try {
+                                com.rawcraft.client.performance.PerformanceProfile p = com.rawcraft.client.performance.PerformanceProfile.valueOf(parts[1].toUpperCase());
+                                com.rawcraft.client.performance.PerformanceManager.getInstance().applyProfile(p);
+                                RawCraftLogger.info("[QA Action]: Applied performance profile " + p);
+                            } catch (Exception e) {
+                                RawCraftLogger.error("Unknown profile: " + parts[1]);
+                            }
+                        }
+                        break;
+                    }
+                    default:
+                        RawCraftLogger.warn("[QA Action]: Unknown QA command: " + cmd);
+                        break;
+                }
+            }
+        } catch (Throwable t) {
+            RawCraftLogger.error("Failed executing QA command from file", t);
+        }
+    }
 }

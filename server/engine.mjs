@@ -10,6 +10,7 @@ import {
   getRequiredJavaVersion,
 } from './javaManager.mjs';
 import { ensureLoaderProfile } from './loaderManager.mjs';
+import { resolveVanillaVersionJson, ensureAssets } from './assetManager.mjs';
 
 const { Client, Authenticator } = mclc;
 
@@ -151,6 +152,74 @@ export async function installModrinthFile(instanceId, projectType, downloadUrl, 
   return { success: true, target: `${subfolder}/${fileName}` };
 }
 
+export function ensureRawCraftClientMod(instanceDir, enabled = true, onLog = () => {}) {
+  const modsDir = path.join(instanceDir, 'mods');
+  const targetModJar = path.join(modsDir, 'rawcraft-client.jar');
+  const disabledModJar = path.join(modsDir, 'rawcraft-client.jar.disabled');
+
+  if (!enabled) {
+    if (fs.existsSync(targetModJar)) {
+      try {
+        fs.renameSync(targetModJar, disabledModJar);
+        onLog('[RawCraft/CLIENT]: Built-in RawCraft Client disabled.');
+      } catch (e) {}
+    }
+    return;
+  }
+
+  const candidateSources = [
+    path.join(PROJECT_ROOT, 'raw-client', 'rawcraft-client.jar'),
+    path.join(PROJECT_ROOT, 'rawcraft-client', 'build', 'libs', 'rawcraft-client-1.0.0.jar'),
+  ];
+  let sourceJar = null;
+  for (const c of candidateSources) {
+    if (fs.existsSync(c)) {
+      sourceJar = c;
+      break;
+    }
+  }
+
+  if (!sourceJar) return;
+
+  if (!fs.existsSync(modsDir)) {
+    fs.mkdirSync(modsDir, { recursive: true });
+  }
+
+  if (fs.existsSync(disabledModJar)) {
+    try {
+      fs.renameSync(disabledModJar, targetModJar);
+      onLog('[RawCraft/CLIENT]: Built-in RawCraft Client enabled.');
+      return;
+    } catch {}
+  }
+
+  try {
+    const srcStats = fs.statSync(sourceJar);
+    let needCopy = true;
+    if (fs.existsSync(targetModJar)) {
+      const tgtStats = fs.statSync(targetModJar);
+      if (tgtStats.size === srcStats.size) {
+        needCopy = false;
+      }
+    }
+    if (needCopy) {
+      fs.copyFileSync(sourceJar, targetModJar);
+      onLog('[RawCraft/CLIENT]: Injected built-in RawCraft Client (Right Shift Click GUI, HUD Studio, Telemetry).');
+    }
+  } catch (err) {
+    onLog(`[RawCraft/WARN]: Could not inject rawcraft-client.jar: ${err.message}`);
+  }
+}
+
+export function sanitizeLog(text) {
+  if (typeof text !== 'string') return text;
+  return text
+    .replace(/--accessToken\s+[^\s]+/gi, '--accessToken [REDACTED]')
+    .replace(/--uuid\s+[^\s]+/gi, '--uuid [REDACTED]')
+    .replace(/--xuid\s+[^\s]+/gi, '--xuid [REDACTED]')
+    .replace(/--clientId\s+[^\s]+/gi, '--clientId [REDACTED]');
+}
+
 export async function launchInstance(config) {
   const {
     instanceId,
@@ -160,12 +229,18 @@ export async function launchInstance(config) {
     username = 'PlayerOne',
     maxRamMb = 4096,
     jvmFlags = '-XX:+UseG1GC',
+    rawcraftClient = true,
   } = config;
 
   const instanceDir = getInstancePath(instanceId);
   broadcastEvent('mc-status', { status: 'INSTALLING' });
   broadcastEvent('mc-console', `[RawCraft/LAUNCH]: Preparing instance ${instanceId}...`);
   broadcastEvent('mc-console', `[RawCraft/CFG]: Version: ${gameVersion} | Loader: ${loader} | RAM: ${maxRamMb}MB`);
+
+  // Ensure built-in client mod for RawCraft client / Fabric
+  if ((loader === 'RAWCRAFT' || loader === 'FABRIC') && rawcraftClient !== false) {
+    ensureRawCraftClientMod(instanceDir, true, (msg) => broadcastEvent('mc-console', msg));
+  }
 
   const launcher = new Client();
   const auth = Authenticator.getAuth(username || 'PlayerOne');
@@ -196,6 +271,40 @@ export async function launchInstance(config) {
     throw err;
   }
 
+  // 1. Resolve vanilla version JSON (following inheritsFrom if custom loader)
+  broadcastEvent('mc-console', `[RawCraft/ASSETS]: Resolving version JSON and assetIndex...`);
+  let vanillaJson = null;
+  try {
+    vanillaJson = await resolveVanillaVersionJson(
+      instanceDir,
+      gameVersion,
+      loader,
+      customLoader,
+      (msg) => broadcastEvent('mc-console', msg)
+    );
+  } catch (err) {
+    broadcastEvent('mc-console', `[RawCraft/ERROR]: Version resolution failed: ${err.message}`);
+    broadcastEvent('mc-status', { status: 'ERROR', error: err.message });
+    throw err;
+  }
+
+  // 2. Ensure assets (indexes and objects) with atomic verification and concurrency download
+  let assetResult = null;
+  try {
+    assetResult = await ensureAssets(
+      instanceDir,
+      vanillaJson,
+      customLoader,
+      (msg) => broadcastEvent('mc-console', msg),
+      (prog) => broadcastEvent('mc-progress', prog)
+    );
+  } catch (err) {
+    broadcastEvent('mc-console', `[RawCraft/ERROR]: Asset verification failed: ${err.message}`);
+    broadcastEvent('mc-status', { status: 'ERROR', error: err.message });
+    throw err;
+  }
+
+  const realAssetIndexId = assetResult.realAssetIndexId;
   const customJvm = jvmFlags.split(' ').map((s) => s.trim()).filter(Boolean);
 
   const launchOpts = {
@@ -208,21 +317,73 @@ export async function launchInstance(config) {
       ...(customLoader ? { custom: customLoader } : {}),
     },
     overrides: {
-      assetIndex: gameVersion,
+      assetIndex: realAssetIndexId,
     },
     memory: {
       max: `${maxRamMb}M`,
       min: '1024M',
     },
     customArgs: customJvm,
+    ...(config.customLaunchArgs ? { customLaunchArgs: config.customLaunchArgs } : {}),
   };
 
   launcher.on('debug', (e) => {
-    broadcastEvent('mc-console', `[RawCraft/DEBUG]: ${e}`);
+    broadcastEvent('mc-console', `[RawCraft/DEBUG]: ${sanitizeLog(String(e))}`);
   });
 
+  let missingSoundCount = 0;
+  let missingSoundThrottleTimer = null;
+  let warnedAssetsBroken = false;
+
   launcher.on('data', (e) => {
-    broadcastEvent('mc-console', `[GAME/STDOUT]: ${e}`);
+    const text = String(e);
+    const lines = text.split('\n');
+
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line) continue;
+
+      // Game-log watcher for broken assets
+      if (line.includes("Can't open the resource index file") || line.includes("Couldn't set icon")) {
+        if (!warnedAssetsBroken) {
+          warnedAssetsBroken = true;
+          broadcastEvent('mc-warning', {
+            type: 'ASSETS_BROKEN',
+            message: 'Game assets are broken. Click Repair assets.',
+            instanceId,
+          });
+          broadcastEvent('mc-console', `[RawCraft/WARN]: Asset error detected in game output. Click 'Repair assets' to re-verify.`);
+        }
+      }
+
+      if (line.includes('Missing sound for event:')) {
+        missingSoundCount++;
+        if (missingSoundCount >= 20 && !warnedAssetsBroken) {
+          warnedAssetsBroken = true;
+          broadcastEvent('mc-warning', {
+            type: 'ASSETS_BROKEN',
+            message: 'Game assets are broken. Click Repair assets.',
+            instanceId,
+          });
+          broadcastEvent('mc-console', `[RawCraft/WARN]: Missing sound events exceeded threshold. Repair assets available.`);
+        }
+
+        // Squelch repeated missing sound lines
+        if (missingSoundCount <= 2) {
+          broadcastEvent('mc-console', `[GAME/STDOUT]: ${sanitizeLog(line)}`);
+        } else {
+          if (!missingSoundThrottleTimer) {
+            missingSoundThrottleTimer = setTimeout(() => {
+              broadcastEvent('mc-console', `[GAME/STDOUT]: Missing sound for event x ${missingSoundCount} (suppressed)`);
+              missingSoundThrottleTimer = null;
+            }, 1000);
+          }
+        }
+        continue;
+      }
+
+      broadcastEvent('mc-console', `[GAME/STDOUT]: ${sanitizeLog(line)}`);
+    }
   });
 
   launcher.on('progress', (e) => {
@@ -236,13 +397,19 @@ export async function launchInstance(config) {
   });
 
   launcher.on('close', (code) => {
+    if (missingSoundThrottleTimer) {
+      clearTimeout(missingSoundThrottleTimer);
+      if (missingSoundCount > 2) {
+        broadcastEvent('mc-console', `[GAME/STDOUT]: Missing sound for event x ${missingSoundCount} (suppressed)`);
+      }
+    }
     broadcastEvent('mc-console', `[RawCraft/EXIT]: Process exited with code ${code}.`);
     broadcastEvent('mc-status', { status: 'IDLE' });
     activeChildProcess = null;
   });
 
   try {
-    broadcastEvent('mc-console', `[RawCraft/LAUNCH]: Launching Minecraft runtime...`);
+    broadcastEvent('mc-console', `[RawCraft/LAUNCH]: Launching Minecraft runtime (assetIndex: ${realAssetIndexId})...`);
     const proc = await launcher.launch(launchOpts);
     activeChildProcess = proc;
     broadcastEvent('mc-status', { status: 'RUNNING' });
@@ -362,6 +529,42 @@ export function createEngineMiddleware() {
           console.error('Launch failed:', err);
         });
         res.end(JSON.stringify({ status: 'LAUNCH_TRIGGERED' }));
+        return;
+      }
+
+      // POST /api/instances/:id/repair-assets
+      const matchRepair = url.pathname.match(/^\/api\/instances\/([^/]+)\/repair-assets$/);
+      if (req.method === 'POST' && matchRepair) {
+        const instanceId = matchRepair[1];
+        const instanceDir = getInstancePath(instanceId);
+        const gameVersion = body.gameVersion || '1.21.4';
+        const loader = body.loader || 'VANILLA';
+        const loaderVersion = body.loaderVersion;
+
+        broadcastEvent('mc-console', `[RawCraft/REPAIR]: Triggering manual asset repair for ${instanceId}...`);
+        let customLoader = null;
+        if (loader && loader !== 'VANILLA') {
+          customLoader = loader.toLowerCase();
+        }
+
+        const vanillaJson = await resolveVanillaVersionJson(
+          instanceDir,
+          gameVersion,
+          loader,
+          customLoader,
+          (msg) => broadcastEvent('mc-console', msg)
+        );
+
+        const assetResult = await ensureAssets(
+          instanceDir,
+          vanillaJson,
+          customLoader,
+          (msg) => broadcastEvent('mc-console', msg),
+          (prog) => broadcastEvent('mc-progress', prog)
+        );
+
+        broadcastEvent('mc-console', `[RawCraft/REPAIR]: Asset repair complete (${assetResult.downloaded} downloaded, total ${assetResult.totalObjects} verified).`);
+        res.end(JSON.stringify({ success: true, ...assetResult }));
         return;
       }
 
