@@ -1,0 +1,37 @@
+plugins {
+    id 'fabric-loom' version '1.6-SNAPSHOT' apply false
+    id 'java'
+}
+
+group = project.maven_group
+version = project.mod_version
+
+repositories {
+    mavenCentral()
+    maven {
+        name = 'Fabric'
+        url = 'https://maven.fabricmc.net/'
+    }
+}
+
+dependencies {
+    // Loom automatically maps minecraft and loader dependencies when loom plugin is active
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+jar {
+    manifest {
+        attributes([
+            "Specification-Title": "RawCraft Client",
+            "Specification-Vendor": "RawCraft Team",
+            "Specification-Version": project.mod_version,
+            "Implementation-Title": project.name,
+            "Implementation-Version": project.mod_version,
+            "Implementation-Vendor": "RawCraft Team"
+        ])
+    }
+}
