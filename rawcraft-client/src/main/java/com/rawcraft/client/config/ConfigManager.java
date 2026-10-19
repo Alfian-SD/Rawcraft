@@ -147,10 +147,17 @@ public class ConfigManager {
                     writer.flush();
                 }
 
-                // Atomic replace
-                Files.move(tempFile.toPath(), configFile.toPath(),
-                        StandardCopyOption.REPLACE_EXISTING,
-                        StandardCopyOption.ATOMIC_MOVE);
+                if (!tempFile.exists()) return;
+
+                // Atomic replace with fallback
+                try {
+                    Files.move(tempFile.toPath(), configFile.toPath(),
+                            StandardCopyOption.REPLACE_EXISTING,
+                            StandardCopyOption.ATOMIC_MOVE);
+                } catch (java.nio.file.AtomicMoveNotSupportedException amns) {
+                    Files.move(tempFile.toPath(), configFile.toPath(),
+                            StandardCopyOption.REPLACE_EXISTING);
+                }
 
                 RawCraftLogger.info("Saved configuration atomically to " + configFile.getName());
             } catch (Throwable t) {

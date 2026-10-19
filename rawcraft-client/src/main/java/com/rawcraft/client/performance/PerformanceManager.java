@@ -1,10 +1,15 @@
 package com.rawcraft.client.performance;
 
+import com.rawcraft.client.config.ConfigManager;
+import net.minecraft.client.CloudStatus;
+import net.minecraft.client.Minecraft;
+import net.minecraft.server.level.ParticleStatus;
+
 public class PerformanceManager {
     private static PerformanceManager instance;
 
     private PerformanceProfile currentProfile = PerformanceProfile.BALANCED;
-    private VanillaOptionsSnapshot userSnapshot = new VanillaOptionsSnapshot();
+    private VanillaOptionsSnapshot userSnapshot = null;
 
     // Granular graphics states
     private String particles = "DECREASED";
@@ -27,8 +32,26 @@ public class PerformanceManager {
         return currentProfile;
     }
 
+    public void captureInitialSnapshotIfNeeded() {
+        if (userSnapshot != null) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc != null && mc.options != null) {
+            try {
+                String p = mc.options.particles().get().name();
+                String c = mc.options.cloudStatus().get().name();
+                boolean s = mc.options.entityShadows().get();
+                int vd = mc.options.renderDistance().get();
+                int sd = mc.options.simulationDistance().get();
+                userSnapshot = new VanillaOptionsSnapshot(p, c, s, 5, vd, sd, true);
+            } catch (Throwable t) {
+                userSnapshot = new VanillaOptionsSnapshot();
+            }
+        }
+    }
+
     public void applyProfile(PerformanceProfile profile) {
         if (profile == null) return;
+        captureInitialSnapshotIfNeeded();
         this.currentProfile = profile;
 
         switch (profile) {
@@ -61,15 +84,52 @@ public class PerformanceManager {
         applyToGameOptions();
 
         try {
-            com.rawcraft.client.config.ConfigManager.getInstance().update(cfg -> {
+            ConfigManager.getInstance().update(cfg -> {
                 cfg.performance.activeProfile = profile.name().toLowerCase();
                 cfg.performanceProfile = profile.name();
+                cfg.performance.renderDistance = this.viewDistance;
+                cfg.performance.simulationDistance = this.simulationDistance;
+                cfg.performance.clouds = this.clouds.toLowerCase();
+                cfg.performance.particles = this.particles.toLowerCase();
+                cfg.performance.entityShadows = this.entityShadows;
+                cfg.modules.weather.precipitation = this.weatherPrecipitation;
             });
         } catch (Throwable ignored) {}
     }
 
     public void applyToGameOptions() {
-        // Invokes Minecraft GameOptions mutators safely at runtime
+        Minecraft mc = Minecraft.getInstance();
+        if (mc == null || mc.options == null) return;
+
+        try {
+            if (this.viewDistance >= 2) {
+                mc.options.renderDistance().set(this.viewDistance);
+            }
+            if (this.simulationDistance >= 2) {
+                mc.options.simulationDistance().set(this.simulationDistance);
+            }
+
+            if ("OFF".equalsIgnoreCase(this.clouds)) {
+                mc.options.cloudStatus().set(CloudStatus.OFF);
+            } else if ("FAST".equalsIgnoreCase(this.clouds)) {
+                mc.options.cloudStatus().set(CloudStatus.FAST);
+            } else {
+                mc.options.cloudStatus().set(CloudStatus.FANCY);
+            }
+
+            if ("MINIMAL".equalsIgnoreCase(this.particles)) {
+                mc.options.particles().set(ParticleStatus.MINIMAL);
+            } else if ("DECREASED".equalsIgnoreCase(this.particles)) {
+                mc.options.particles().set(ParticleStatus.DECREASED);
+            } else {
+                mc.options.particles().set(ParticleStatus.ALL);
+            }
+
+            mc.options.entityShadows().set(this.entityShadows);
+            mc.options.save();
+        } catch (Throwable t) {
+            // Log silently or fail-safe
+        }
     }
 
     public void restoreVanillaSnapshot() {
@@ -81,6 +141,13 @@ public class PerformanceManager {
             this.viewDistance = userSnapshot.viewDistance;
             this.simulationDistance = userSnapshot.simulationDistance;
             applyToGameOptions();
+
+            try {
+                ConfigManager.getInstance().update(cfg -> {
+                    cfg.performance.activeProfile = "custom";
+                    cfg.performanceProfile = "Custom";
+                });
+            } catch (Throwable ignored) {}
         }
     }
 

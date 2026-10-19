@@ -1,5 +1,7 @@
 package com.rawcraft.client.hud;
 
+import com.rawcraft.client.config.ConfigData;
+import com.rawcraft.client.config.ConfigManager;
 import com.rawcraft.client.hud.widgets.*;
 
 import java.util.*;
@@ -17,6 +19,8 @@ public class HudManager {
         register(new PotionHudWidget());
         register(new ArmorHudWidget());
         register(new CustomCrosshairWidget());
+
+        syncFromConfig();
     }
 
     public static synchronized HudManager getInstance() {
@@ -62,6 +66,30 @@ public class HudManager {
         }
     }
 
+    public void syncFromConfig() {
+        try {
+            ConfigData cfg = ConfigManager.getInstance().getConfig();
+            if (cfg == null || cfg.hud == null || cfg.hud.elements == null) return;
+            for (HudWidget w : widgets.values()) {
+                ConfigData.HudElementConfig elCfg = cfg.hud.elements.get(w.getId());
+                if (elCfg != null) {
+                    w.syncFromConfig(elCfg);
+                }
+            }
+        } catch (Throwable ignored) {}
+    }
+
+    public void syncToConfig() {
+        try {
+            ConfigData cfg = ConfigManager.getInstance().getConfig();
+            if (cfg == null || cfg.hud == null || cfg.hud.elements == null) return;
+            for (HudWidget w : widgets.values()) {
+                ConfigData.HudElementConfig elCfg = cfg.hud.elements.computeIfAbsent(w.getId(), k -> new ConfigData.HudElementConfig());
+                w.syncToConfig(elCfg);
+            }
+        } catch (Throwable ignored) {}
+    }
+
     public void resetAll() {
         widgets.clear();
         register(new FpsWidget());
@@ -72,5 +100,8 @@ public class HudManager {
         register(new PotionHudWidget());
         register(new ArmorHudWidget());
         register(new CustomCrosshairWidget());
+
+        syncToConfig();
+        ConfigManager.getInstance().saveNow();
     }
 }

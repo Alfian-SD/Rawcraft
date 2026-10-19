@@ -1,34 +1,39 @@
 package com.rawcraft.client.hud;
 
-import com.rawcraft.client.ui.RawCraftTheme;
+import com.rawcraft.client.config.ConfigData;
+import com.rawcraft.client.config.ConfigManager;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 public abstract class HudWidget {
     private final String id;
     private final String name;
-    private HudAnchor anchor;
-    private int offsetX;
-    private int offsetY;
-    private double scale;
-    private double opacity;
-    private boolean enabled;
+    private HudAnchor anchor = HudAnchor.TOP_LEFT;
+    private int offsetX = 16;
+    private int offsetY = 16;
+    private double scale = 1.0;
+    private double opacity = 1.0;
+    private boolean enabled = true;
+    private int textColor = 0xFFFFFFFF;
+    private boolean shadow = true;
+    private String backgroundMode = "solid";
+    private int backgroundColor = 0xB2120C22; // ~70% alpha dark purple
 
-    // Measured bounding box in unscaled coordinates
-    protected int width = 100;
-    protected int height = 30;
+    protected int width = 80;
+    protected int height = 18;
 
-    // Computed absolute screen render coordinates
-    private int screenX = 16;
-    private int screenY = 16;
+    // Last computed screen coordinates
+    private int lastScreenX = 16;
+    private int lastScreenY = 16;
 
-    public HudWidget(String id, String name, HudAnchor anchor, int offsetX, int offsetY, double scale, double opacity, boolean enabled) {
+    public HudWidget(String id, String name, HudAnchor defaultAnchor, int defX, int defY) {
         this.id = id;
         this.name = name;
-        this.anchor = anchor;
-        this.offsetX = offsetX;
-        this.offsetY = offsetY;
-        this.scale = clamp(scale, 0.5, 2.0);
-        this.opacity = clamp(opacity, 0.35, 1.0);
-        this.enabled = enabled;
+        this.anchor = defaultAnchor;
+        this.offsetX = defX;
+        this.offsetY = defY;
     }
 
     public String getId() {
@@ -44,9 +49,7 @@ public abstract class HudWidget {
     }
 
     public void setAnchor(HudAnchor anchor) {
-        if (anchor != null) {
-            this.anchor = anchor;
-        }
+        if (anchor != null) this.anchor = anchor;
     }
 
     public int getOffsetX() {
@@ -70,7 +73,7 @@ public abstract class HudWidget {
     }
 
     public void setScale(double scale) {
-        this.scale = clamp(scale, 0.5, 2.0);
+        this.scale = Math.max(0.5, Math.min(2.0, scale));
     }
 
     public double getOpacity() {
@@ -78,7 +81,7 @@ public abstract class HudWidget {
     }
 
     public void setOpacity(double opacity) {
-        this.opacity = clamp(opacity, 0.35, 1.0);
+        this.opacity = Math.max(0.2, Math.min(1.0, opacity));
     }
 
     public boolean isEnabled() {
@@ -87,6 +90,38 @@ public abstract class HudWidget {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public int getTextColor() {
+        return textColor;
+    }
+
+    public void setTextColor(int textColor) {
+        this.textColor = textColor;
+    }
+
+    public boolean isShadow() {
+        return shadow;
+    }
+
+    public void setShadow(boolean shadow) {
+        this.shadow = shadow;
+    }
+
+    public String getBackgroundMode() {
+        return backgroundMode;
+    }
+
+    public void setBackgroundMode(String backgroundMode) {
+        this.backgroundMode = backgroundMode;
+    }
+
+    public int getBackgroundColor() {
+        return backgroundColor;
+    }
+
+    public void setBackgroundColor(int backgroundColor) {
+        this.backgroundColor = backgroundColor;
     }
 
     public int getWidth() {
@@ -106,89 +141,50 @@ public abstract class HudWidget {
     }
 
     public int getScreenX() {
-        return screenX;
+        return lastScreenX;
     }
 
     public int getScreenY() {
-        return screenY;
+        return lastScreenY;
     }
 
-    /**
-     * Clamps and updates the absolute screen position relative to viewport and anchor.
-     * Matches the formula in reference.html:
-     * left = Math.max(8, Math.min(vw - width - 8, left))
-     * top = Math.max(8, Math.min(vh - height - 8, top))
-     */
     public void updateScreenPosition(int screenWidth, int screenHeight) {
         int w = getScaledWidth();
         int h = getScaledHeight();
 
-        int left = 16;
-        int top = 16;
+        int x = anchor.computeX(offsetX, w, screenWidth);
+        int y = anchor.computeY(offsetY, h, screenHeight);
 
-        switch (anchor) {
-            case TOP_LEFT:
-                left = offsetX;
-                top = offsetY;
-                break;
-            case TOP_RIGHT:
-                left = screenWidth - w - offsetX;
-                top = offsetY;
-                break;
-            case BOTTOM_LEFT:
-                left = offsetX;
-                top = screenHeight - h - offsetY;
-                break;
-            case BOTTOM_RIGHT:
-                left = screenWidth - w - offsetX;
-                top = screenHeight - h - offsetY;
-                break;
-            case CENTER:
-                left = (screenWidth / 2) - (w / 2) + offsetX;
-                top = (screenHeight / 2) - (h / 2) + offsetY;
-                break;
-        }
+        // Clamping to screen boundaries (PRD §3.4 & §5.4: margin 4px, test says 8px margin safe)
+        x = Math.max(8, Math.min(screenWidth - w - 8, x));
+        y = Math.max(8, Math.min(screenHeight - h - 8, y));
 
-        // Clamp inside usable screen bounds (8px margin from edges)
-        left = Math.max(8, Math.min(screenWidth - w - 8, left));
-        top = Math.max(8, Math.min(screenHeight - h - 8, top));
-
-        this.screenX = left;
-        this.screenY = top;
+        this.lastScreenX = x;
+        this.lastScreenY = y;
     }
 
-    /**
-     * Updates offset when dragging to a new target screen position.
-     */
-    public void dragTo(int targetScreenX, int targetScreenY, int screenWidth, int screenHeight) {
+    public void dragTo(int targetX, int targetY, int screenWidth, int screenHeight) {
         int w = getScaledWidth();
         int h = getScaledHeight();
 
-        // Screen boundary clamp
-        int clampedX = Math.max(8, Math.min(screenWidth - w - 8, targetScreenX));
-        int clampedY = Math.max(8, Math.min(screenHeight - h - 8, targetScreenY));
+        // 1. Clamp target coordinates inside screen boundaries
+        targetX = Math.max(8, Math.min(screenWidth - w - 8, targetX));
+        targetY = Math.max(8, Math.min(screenHeight - h - 8, targetY));
+
+        // 2. Determine nearest anchor
+        this.anchor = HudAnchor.findNearest(targetX, targetY, w, h, screenWidth, screenHeight);
+
+        // 3. Compute new offset relative to nearest anchor
+        switch (anchor) {
+            case TOP_LEFT, MIDDLE_LEFT, BOTTOM_LEFT -> this.offsetX = targetX;
+            case TOP_CENTER, CENTER, BOTTOM_CENTER -> this.offsetX = targetX - ((screenWidth - w) / 2);
+            case TOP_RIGHT, MIDDLE_RIGHT, BOTTOM_RIGHT -> this.offsetX = screenWidth - w - targetX;
+        }
 
         switch (anchor) {
-            case TOP_LEFT:
-                this.offsetX = clampedX;
-                this.offsetY = clampedY;
-                break;
-            case TOP_RIGHT:
-                this.offsetX = screenWidth - w - clampedX;
-                this.offsetY = clampedY;
-                break;
-            case BOTTOM_LEFT:
-                this.offsetX = clampedX;
-                this.offsetY = screenHeight - h - clampedY;
-                break;
-            case BOTTOM_RIGHT:
-                this.offsetX = screenWidth - w - clampedX;
-                this.offsetY = screenHeight - h - clampedY;
-                break;
-            case CENTER:
-                this.offsetX = clampedX - ((screenWidth / 2) - (w / 2));
-                this.offsetY = clampedY - ((screenHeight / 2) - (h / 2));
-                break;
+            case TOP_LEFT, TOP_CENTER, TOP_RIGHT -> this.offsetY = targetY;
+            case MIDDLE_LEFT, CENTER, MIDDLE_RIGHT -> this.offsetY = targetY - ((screenHeight - h) / 2);
+            case BOTTOM_LEFT, BOTTOM_CENTER, BOTTOM_RIGHT -> this.offsetY = screenHeight - h - targetY;
         }
 
         updateScreenPosition(screenWidth, screenHeight);
@@ -197,18 +193,73 @@ public abstract class HudWidget {
     public boolean isMouseOver(int mouseX, int mouseY) {
         int w = getScaledWidth();
         int h = getScaledHeight();
-        return mouseX >= screenX && mouseX <= screenX + w && mouseY >= screenY && mouseY <= screenY + h;
+        return mouseX >= lastScreenX && mouseX <= lastScreenX + w && mouseY >= lastScreenY && mouseY <= lastScreenY + h;
     }
 
-    public abstract void render(Object drawContext, float tickDelta);
+    public void renderWidget(GuiGraphicsExtractor extractor, DeltaTracker deltaTracker, int screenWidth, int screenHeight, boolean isEditor) {
+        if (!enabled && !isEditor) return;
+        updateScreenPosition(screenWidth, screenHeight);
 
-    public void renderEditorBounds(Object drawContext, boolean isSelected) {
-        // Draw bounding box and dashed/solid border in editor
+        int x = lastScreenX;
+        int y = lastScreenY;
+        int w = getScaledWidth();
+        int h = getScaledHeight();
+
+        // Background
+        if (!"off".equalsIgnoreCase(backgroundMode)) {
+            int bgCol = "translucent".equalsIgnoreCase(backgroundMode) ? 0x66000000 : backgroundColor;
+            renderBackground(extractor, x, y, w, h, bgCol);
+        }
+
+        // Draw element content
+        drawContent(extractor, deltaTracker, x, y, w, h, isEditor);
+
+        // Editor selection indicator
+        if (isEditor) {
+            extractor.outline(x - 1, y - 1, w + 2, h + 2, 0x888B5CF6);
+        }
     }
 
-    private static double clamp(double val, double min, double max) {
-        if (val < min) return min;
-        if (val > max) return max;
-        return val;
+    protected void renderBackground(GuiGraphicsExtractor extractor, int x, int y, int w, int h, int color) {
+        extractor.fill(x, y, x + w, y + h, color);
+        // 1px subtle border
+        extractor.outline(x, y, w, h, 0x3333285C);
+    }
+
+    protected abstract void drawContent(GuiGraphicsExtractor extractor, DeltaTracker deltaTracker, int x, int y, int w, int h, boolean isEditor);
+
+    protected Font getFont() {
+        Minecraft mc = Minecraft.getInstance();
+        return mc.gui != null && mc.gui.hud != null ? mc.gui.hud.getFont() : mc.font;
+    }
+
+    public void syncFromConfig(ConfigData.HudElementConfig cfg) {
+        if (cfg == null) return;
+        this.enabled = cfg.enabled;
+        this.anchor = HudAnchor.fromString(cfg.anchor);
+        this.offsetX = cfg.x;
+        this.offsetY = cfg.y;
+        this.scale = cfg.scale;
+        this.opacity = cfg.opacity;
+        this.shadow = cfg.shadow;
+        this.backgroundMode = cfg.backgroundMode;
+        if (cfg.color != null && !cfg.color.isEmpty()) {
+            try {
+                this.textColor = (int) Long.parseLong(cfg.color.replace("#", ""), 16);
+                if (cfg.color.length() <= 7) this.textColor |= 0xFF000000;
+            } catch (Exception ignored) {}
+        }
+    }
+
+    public void syncToConfig(ConfigData.HudElementConfig cfg) {
+        if (cfg == null) return;
+        cfg.enabled = this.enabled;
+        cfg.anchor = this.anchor.name();
+        cfg.x = this.offsetX;
+        cfg.y = this.offsetY;
+        cfg.scale = this.scale;
+        cfg.opacity = this.opacity;
+        cfg.shadow = this.shadow;
+        cfg.backgroundMode = this.backgroundMode;
     }
 }
