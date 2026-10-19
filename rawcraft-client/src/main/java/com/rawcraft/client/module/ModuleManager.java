@@ -9,7 +9,10 @@ public class ModuleManager {
     private static ModuleManager instance;
     private final Map<String, Module> modules = new LinkedHashMap<>();
 
-    private ModuleManager() {}
+    private ModuleManager() {
+        register(new com.rawcraft.client.module.impl.FullbrightModule());
+        register(new com.rawcraft.client.module.impl.ToggleSprintModule());
+    }
 
     public static synchronized ModuleManager getInstance() {
         if (instance == null) {

@@ -1,7 +1,7 @@
 package com.rawcraft.client.mixin;
 
-import com.rawcraft.client.modules.ModuleManager;
-import com.rawcraft.client.modules.impl.ToggleSprintModule;
+import com.rawcraft.client.module.ModuleManager;
+import com.rawcraft.client.module.impl.ToggleSprintModule;
 import net.minecraft.client.player.KeyboardInput;
 import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.phys.Vec2;

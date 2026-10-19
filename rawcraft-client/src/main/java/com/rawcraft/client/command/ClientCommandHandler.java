@@ -77,6 +77,19 @@ public class ClientCommandHandler {
         sendChat("§d§l========================================");
     }
 
+    public static String getDiagnosticsText() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[RawCraft Client Diagnostics]\n");
+        sb.append("- Version: ").append(RawCraftClient.MOD_VERSION).append(" | Target MC: 26.2 (Fabric)\n");
+        sb.append("- Java Runtime: ").append(System.getProperty("java.version")).append(" (").append(System.getProperty("java.vendor")).append(")\n");
+        sb.append("- Active Modules: ").append(ModuleManager.getInstance().getActiveCount()).append(" / ").append(ModuleManager.getInstance().getTotalCount()).append("\n");
+        for (Module m : ModuleManager.getInstance().getModules()) {
+            sb.append("  * ").append(m.getName()).append(" [").append(m.getId()).append("]: ").append(m.getStatus().getDisplayLabel()).append("\n");
+        }
+        sb.append("- Last Logged Error: ").append(RawCraftLogger.getLastError()).append("\n");
+        return sb.toString();
+    }
+
     private static void sendChat(String text) {
         RawCraftLogger.info(text);
         try {

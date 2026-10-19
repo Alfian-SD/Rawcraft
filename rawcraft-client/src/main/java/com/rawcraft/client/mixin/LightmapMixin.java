@@ -1,7 +1,7 @@
 package com.rawcraft.client.mixin;
 
-import com.rawcraft.client.modules.ModuleManager;
-import com.rawcraft.client.modules.impl.FullbrightModule;
+import com.rawcraft.client.module.ModuleManager;
+import com.rawcraft.client.module.impl.FullbrightModule;
 import net.minecraft.client.renderer.LightmapRenderStateExtractor;
 import net.minecraft.client.renderer.state.LightmapRenderState;
 import org.spongepowered.asm.mixin.Mixin;
