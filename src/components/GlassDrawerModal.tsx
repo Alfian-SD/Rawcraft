@@ -14,6 +14,8 @@ interface GlassDrawerModalProps {
   onAddProfile: () => void;
   onDeleteProfile: (id: string) => void;
   onUpdateProfile: (updated: Profile) => void;
+  /** Open the CONFIGURE panel for a specific instance (Instance tab). */
+  onOpenConfigure: (id: string) => void;
   settings: GlobalSettings;
   onUpdateSettings: (settings: GlobalSettings) => void;
   isRunning: boolean;
@@ -32,6 +34,7 @@ export const GlassDrawerModal: React.FC<GlassDrawerModalProps> = ({
   onAddProfile,
   onDeleteProfile,
   onUpdateProfile,
+  onOpenConfigure,
   settings,
   onUpdateSettings,
   isRunning,
@@ -274,6 +277,17 @@ export const GlassDrawerModal: React.FC<GlassDrawerModalProps> = ({
                             AKTIF
                           </span>
                         )}
+                        <button
+                          type="button"
+                          className="btn-secondary btn-sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenConfigure(p.id);
+                          }}
+                          aria-label={`Konfigurasi instance ${p.name}`}
+                        >
+                          KONFIGURASI
+                        </button>
                         {profiles.length > 1 && (
                           <button
                             type="button"

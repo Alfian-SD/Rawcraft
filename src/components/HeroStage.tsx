@@ -10,6 +10,8 @@ interface HeroStageProps {
   onOpenConfigure: () => void;
   onOpenMods: () => void;
   onOpenConsole: () => void;
+  /** A right-side drawer is open; shrink the stage so the hero stays centered in view. */
+  drawerOpen?: boolean;
 }
 
 export const HeroStage: React.FC<HeroStageProps> = ({
@@ -20,6 +22,7 @@ export const HeroStage: React.FC<HeroStageProps> = ({
   onOpenConfigure,
   onOpenMods,
   onOpenConsole,
+  drawerOpen = false,
 }) => {
   // RAM allocation calculation (capped to 16GB gauge baseline)
   const ramPercent = Math.min(100, Math.round((profile.maxRamMb / 16384) * 100));
@@ -43,6 +46,7 @@ export const HeroStage: React.FC<HeroStageProps> = ({
 
   return (
     <div
+      className="hero-stage-shift"
       style={{
         flex: 1,
         display: 'flex',
@@ -51,8 +55,15 @@ export const HeroStage: React.FC<HeroStageProps> = ({
         overflowX: 'hidden',
         padding: '0 40px 32px 40px',
         position: 'relative',
+        marginRight: drawerOpen ? 'min(720px, 90vw)' : '0px',
+        transition: 'margin-right var(--dur-base) var(--ease-out-expo)',
       }}
     >
+      <style>{`
+        @media (max-width: 900px) {
+          .hero-stage-shift { margin-right: 0 !important; }
+        }
+      `}</style>
       {/* 2.5D Voxel Horizon Background (Twilight Ridge & Campfire) */}
       <VoxelHeroBackground />
 
@@ -137,15 +148,6 @@ export const HeroStage: React.FC<HeroStageProps> = ({
               <span>Main</span>
             </button>
           )}
-
-          <button
-            type="button"
-            className="btn-configure"
-            onClick={onOpenConfigure}
-            aria-label="Konfigurasi Versi, Direktori, dan Argumen JVM"
-          >
-            <span>Konfigurasi</span>
-          </button>
         </div>
       </div>
 

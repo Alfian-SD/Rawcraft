@@ -26,6 +26,9 @@ const DEFAULT_FALLBACK_PROFILE: Profile = {
   rawcraftClient: true,
 };
 
+/** Views that render as a right-side drawer over the hero stage. */
+const RIGHT_DRAWER_VIEWS: ActiveView[] = ['CONFIGURE', 'PROFILES', 'SETTINGS', 'CONSOLE', 'MODS'];
+
 export default function App() {
   const [state, setState] = useState<LauncherState>(() => launcherApi.getLauncherState());
   const [activeView, setActiveView] = useState<ActiveView>('HERO');
@@ -429,6 +432,7 @@ export default function App() {
             onOpenConfigure={() => handleNavigateView('CONFIGURE')}
             onOpenMods={() => handleNavigateView('MODS')}
             onOpenConsole={() => handleNavigateView('CONSOLE')}
+            drawerOpen={RIGHT_DRAWER_VIEWS.includes(activeView)}
           />
         )}
 
@@ -444,6 +448,10 @@ export default function App() {
             onAddProfile={handleAddProfile}
             onDeleteProfile={handleDeleteProfile}
             onUpdateProfile={handleUpdateProfile}
+            onOpenConfigure={(id) => {
+              handleSelectProfile(id);
+              handleNavigateView('CONFIGURE');
+            }}
             settings={state.globalSettings}
             onUpdateSettings={handleUpdateSettings}
             isRunning={isRunning}

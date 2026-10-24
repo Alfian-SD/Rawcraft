@@ -851,11 +851,14 @@ input[type="radio"].raw-radio,
 
 .hero-content-stage {
   animation: heroStageReveal 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  container-type: inline-size;
 }
 
 .hero-title {
   font-family: var(--font-sans);
-  font-size: var(--type-display);
+  /* Scales with the stage width so the title keeps its single line when a
+     drawer narrows the stage, and stays at --type-display when it does not. */
+  font-size: clamp(26px, 7.8cqw, 60px);
   font-weight: 700;
   letter-spacing: -0.025em;
   text-transform: none;
@@ -986,19 +989,13 @@ input[type="range"]::-moz-range-thumb {
 
 .bento-deck {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   width: 100%;
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
   overflow: hidden;
   background: var(--surface-card);
   box-shadow: var(--shadow);
-}
-
-@media (max-width: 1100px) {
-  .bento-deck {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 .bento-card {
