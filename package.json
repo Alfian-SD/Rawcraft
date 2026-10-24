@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "node src/utils/buildCommand.test.mjs && node test/v2-integration.test.mjs && node test/javaManager.test.mjs && node test/loaderManager.test.mjs && node test/versions.test.mjs && node test/loaderProfiles.test.mjs && node test/rawcraftClientInjection.test.mjs && node test/unifiedStore.test.mjs && node --experimental-strip-types test/storeFormat.test.mjs"
+    "test": "node src/utils/buildCommand.test.mjs && node test/v2-integration.test.mjs && node test/javaManager.test.mjs && node test/loaderManager.test.mjs && node test/versions.test.mjs && node test/loaderProfiles.test.mjs && node test/rawcraftClientInjection.test.mjs && node test/unifiedStore.test.mjs && node --experimental-strip-types test/storeFormat.test.mjs && node --experimental-strip-types test/maintenance.test.mjs"
   },
   "dependencies": {
     "adm-zip": "^0.6.1",

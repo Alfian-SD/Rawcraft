@@ -305,7 +305,56 @@ Version rows collapse from 6 columns to 3 below `900px`; trailing metadata hides
 
 ---
 
-## 13. Anti-Patterns
+## 13. Maintenance Gate
+
+Sudden lockout surface. One switch file, two scopes.
+
+### 13.1 Switch file
+`public/maintenance.json` — served at `/maintenance.json` in dev **and** copied into `dist/` on build. Edit it on a running install and reload; no rebuild, no redeploy.
+
+```json
+{
+  "enabled": false,
+  "title": "RawCraft sedang dalam perawatan",
+  "message": "Kami sedang memperbaiki layanan.",
+  "eta": "2026-10-24T23:00:00+07:00",
+  "lockedViews": ["STORE", "CONSOLE"]
+}
+```
+
+| Field | Meaning |
+| :--- | :--- |
+| `enabled` | `true` locks the **whole launcher**. Wins over `lockedViews`. |
+| `lockedViews` | Locks individual tabs while `enabled` is `false`. Values: `HERO` `PROFILES` `CONFIGURE` `MODS` `STORE` `SETTINGS` `CONSOLE` `LOADER`. |
+| `title` / `message` | Copy shown on the gate. Blank falls back to the default Indonesian copy. |
+| `eta` | Strict ISO-8601 only. Anything else renders no estimate box. |
+
+**Fail-open is mandatory.** Missing file, 404, bad JSON, or unknown view names must resolve to "nothing locked". A broken switch file never bricks the launcher. Re-read on window `focus` so a lock lands without a full reload.
+
+### 13.2 Two scopes
+- **App scope** (`.mnt-app`) — `position: fixed; inset: 0; z-index: 9000`, replaces the whole shell. Nav rail, header, and drawer are not rendered at all. `role="dialog"` + `aria-modal="true"`.
+- **Tab scope** (`.mnt-tab`) — fills the content slot only, `flex: 1`, `border-radius: var(--radius-lg)`. Nav rail and header stay live so the user can move elsewhere. `role="region"`. Carries a `TAB // <LABEL>` chip naming the locked surface.
+
+Locked tabs also get a `LOCK` badge (`.nav-rail-lock`) in the nav rail, so the state is visible **before** clicking.
+
+### 13.3 Visual
+- Surface: same `#202636 → var(--bg-subtle)` gradient as the fullscreen installer, plus a 48px grid `.mnt-backdrop` masked to a radial fade.
+- Card: Night Charcoal `rgba(32,39,56,.97) → rgba(27,32,48,.97)`, `1px solid var(--border)`, `--radius-lg`, deep shelf shadow.
+- Badge: Campfire Orange `#FFD08F → #FFBD69` pill, dark `#242A3B` text, 6px blinking dot.
+- ETA: `JetBrains Mono` in `var(--orange)`.
+- Footer: `ERR_SVC_MAINTENANCE` in `var(--error)` at 85% opacity — reads as a diagnostic code, not an alert.
+- Primary action reuses the tactile lime shelf (`0 3px 0 #7FB11F`); secondary is a ghost button.
+
+### 13.4 Motion
+- Card enters with `mi-rise` at `--dur-enter` `--ease-out-expo`.
+- `.mnt-glow` radial breathes on `mntPulse` 5200ms `--ease-linear` (ambient loop, allowed by §9).
+- `.mnt-dot` blinks on `mntBlink` 1600ms `--ease-linear`.
+- Buttons: `translateY(-2px)` hover, `translateY(2px)` press.
+- `prefers-reduced-motion` kills the glow, the blink, and the card entrance. Static page, still legible.
+
+---
+
+## 14. Anti-Patterns
 
 ❌ `transition: all` — always name the properties.
 ❌ Animating `box-shadow` on scroll or on infinite loops (repaint cost).

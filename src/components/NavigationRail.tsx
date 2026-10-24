@@ -10,6 +10,8 @@ interface NavigationRailProps {
   onSelectView: (view: ActiveView) => void;
   onSelectLoader: (loaderId: LoaderType) => void;
   isRunning: boolean;
+  /** Views currently gated behind maintenance. Shown with a LOCK badge. */
+  lockedViews?: ActiveView[];
 }
 
 export const NavigationRail: React.FC<NavigationRailProps> = ({
@@ -18,7 +20,15 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
   onSelectView,
   onSelectLoader,
   isRunning,
+  lockedViews = [],
 }) => {
+  const LockBadge: React.FC<{ view: ActiveView }> = ({ view }) =>
+    lockedViews.includes(view) ? (
+      <span className="nav-rail-lock" aria-hidden="true">
+        LOCK
+      </span>
+    ) : null;
+
   return (
     <aside
       style={{
@@ -83,6 +93,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
             <polyline points="9 22 9 12 15 12 15 22" />
           </svg>
           <span className="nav-rail-label">Beranda</span>
+          <LockBadge view="HERO" />
         </button>
 
         <button
@@ -99,6 +110,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
             <rect x="3" y="14" width="7" height="7" />
           </svg>
           <span className="nav-rail-label">Instance</span>
+          <LockBadge view="PROFILES" />
         </button>
 
         <button
@@ -114,6 +126,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
             <path d="M16 10a4 4 0 0 1-8 0" />
           </svg>
           <span className="nav-rail-label">Instal Mod</span>
+          <LockBadge view="STORE" />
         </button>
 
         <button
@@ -128,6 +141,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
             <line x1="12" y1="19" x2="20" y2="19" />
           </svg>
           <span className="nav-rail-label">Konsol</span>
+          <LockBadge view="CONSOLE" />
         </button>
 
         <button
@@ -142,6 +156,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6 1.65 1.65 0 0 0 10 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
           <span className="nav-rail-label">Pengaturan</span>
+          <LockBadge view="SETTINGS" />
         </button>
 
         <div

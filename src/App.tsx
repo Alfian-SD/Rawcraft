@@ -9,6 +9,9 @@ import { HeroStage } from './components/HeroStage';
 import { LoaderViewTab } from './components/LoaderViewTab';
 import { GlassDrawerModal } from './components/GlassDrawerModal';
 import { CommandPalette } from './components/CommandPalette';
+import { MaintenanceScreen } from './components/MaintenanceScreen';
+import { useMaintenance } from './hooks/useMaintenance';
+import { isAppLocked, isViewLocked } from './utils/maintenance';
 
 const DEFAULT_FALLBACK_PROFILE: Profile = {
   id: 'prof-rawcraft-262',
@@ -33,6 +36,7 @@ export default function App() {
   const [progress, setProgress] = useState<ProgressData | null>(null);
   const [assetsWarning, setAssetsWarning] = useState<string | null>(null);
   const [isRepairing, setIsRepairing] = useState(false);
+  const maintenance = useMaintenance();
   const [logs, setLogs] = useState<string[]>([
     `[${new Date().toLocaleTimeString()}] [RawCraft/Misty]: System initialized. Welcome to Minecraft launcher.`,
   ]);
@@ -296,6 +300,13 @@ export default function App() {
     }
   };
 
+  const appLocked = isAppLocked(maintenance);
+  const viewLocked = isViewLocked(maintenance, activeView);
+
+  if (appLocked) {
+    return <MaintenanceScreen mode="app" config={maintenance} />;
+  }
+
   return (
     <div
       data-animations={state.globalSettings.animationsEnabled !== false ? 'true' : 'false'}
@@ -315,6 +326,7 @@ export default function App() {
         onSelectView={handleNavigateView}
         onSelectLoader={handleSelectLoader}
         isRunning={isRunning}
+        lockedViews={maintenance.lockedViews}
       />
 
       {/* 2. Main Stage with Header, Main Content View, and Bottom Controls */}
@@ -378,7 +390,14 @@ export default function App() {
         />
 
         {/* Primary Content Slot: Loader Full Page or Hero Stage */}
-        {activeView === 'LOADER' && currentLoaderConfig ? (
+        {viewLocked ? (
+          <MaintenanceScreen
+            mode="tab"
+            config={maintenance}
+            view={activeView}
+            onDismissTab={() => handleNavigateView('HERO')}
+          />
+        ) : activeView === 'LOADER' && currentLoaderConfig ? (
           <LoaderViewTab
             key={currentLoaderConfig.id}
             loader={currentLoaderConfig}
@@ -409,23 +428,25 @@ export default function App() {
         )}
 
         {/* 3. Slide-over Glass Drawer / Modal for Config, Mods, Store & Logs (Cleaned of loader code) */}
-        <GlassDrawerModal
-          activeView={activeView}
-          onClose={() => handleNavigateView(activeLoaderId ? 'LOADER' : 'HERO')}
-          profile={activeProfile}
-          profiles={state.profiles}
-          activeProfileId={state.activeProfileId}
-          onSelectProfile={handleSelectProfile}
-          onAddProfile={handleAddProfile}
-          onDeleteProfile={handleDeleteProfile}
-          onUpdateProfile={handleUpdateProfile}
-          settings={state.globalSettings}
-          onUpdateSettings={handleUpdateSettings}
-          isRunning={isRunning}
-          logs={logs}
-          onClearLogs={() => setLogs([])}
-          onTerminate={handleTerminate}
-        />
+        {!viewLocked && (
+          <GlassDrawerModal
+            activeView={activeView}
+            onClose={() => handleNavigateView(activeLoaderId ? 'LOADER' : 'HERO')}
+            profile={activeProfile}
+            profiles={state.profiles}
+            activeProfileId={state.activeProfileId}
+            onSelectProfile={handleSelectProfile}
+            onAddProfile={handleAddProfile}
+            onDeleteProfile={handleDeleteProfile}
+            onUpdateProfile={handleUpdateProfile}
+            settings={state.globalSettings}
+            onUpdateSettings={handleUpdateSettings}
+            isRunning={isRunning}
+            logs={logs}
+            onClearLogs={() => setLogs([])}
+            onTerminate={handleTerminate}
+          />
+        )}
 
         {/* 4. Global Command Palette (Ctrl+K) */}
         <CommandPalette
