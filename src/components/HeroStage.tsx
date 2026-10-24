@@ -40,10 +40,6 @@ export const HeroStage: React.FC<HeroStageProps> = ({
     }
   };
 
-  const displayName = profile.name?.includes('//')
-    ? profile.name.split('//')[0].trim()
-    : profile.name || 'Klasik';
-
   return (
     <div
       className="hero-stage-shift"
@@ -84,29 +80,8 @@ export const HeroStage: React.FC<HeroStageProps> = ({
           zIndex: 1,
         }}
       >
-        <button
-          type="button"
-          onClick={onOpenConfigure}
-          aria-label={`Konfigurasi instance: ${profile.loader} · ${profile.gameVersion}`}
-          className="glass-pill"
-          style={{ marginBottom: '24px' }}
-        >
-          <span
-            style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '2px',
-              backgroundColor: 'var(--accent)',
-            }}
-          />
-          <span style={{ color: 'var(--text)' }}>
-            {profile.loader} · {profile.gameVersion}
-          </span>
-          <span style={{ color: 'var(--text-faint)' }}>stabil</span>
-        </button>
-
         <h1 className="hero-title" style={{ marginBottom: '18px' }}>
-          {displayName}
+          RAWCRAFT
         </h1>
 
         <p
