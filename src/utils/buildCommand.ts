@@ -10,7 +10,7 @@ export function buildCommand(profile: Profile, settings: GlobalSettings): string
   const jvmFlags = profile.jvmFlags?.trim() ? profile.jvmFlags.trim() : '';
 
   let mainClass = 'net.minecraft.client.main.Main';
-  if (profile.loader === 'FABRIC') {
+  if (profile.loader === 'RAWCRAFT' || profile.loader === 'FABRIC') {
     mainClass = 'net.fabricmc.loader.impl.launch.knot.KnotClient';
   } else if (profile.loader === 'NEOFORGE') {
     mainClass = 'cpw.mods.bootstraplauncher.BootstrapLauncher';

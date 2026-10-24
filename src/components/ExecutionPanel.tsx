@@ -183,7 +183,7 @@ export const ExecutionPanel: React.FC<ExecutionPanelProps> = ({
       {/* CLI Preview Box (Elevated Card - 5px border) */}
       <div className="card-elevated" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h4 style={{ fontSize: '18px' }}>COMMAND PREVIEW</h4>
+          <h4 style={{ fontSize: 'var(--type-h4, 16px)', fontWeight: 800, letterSpacing: '0.04em' }}>COMMAND PREVIEW</h4>
           <button
             type="button"
             className="btn-secondary btn-sm"

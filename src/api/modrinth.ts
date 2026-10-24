@@ -14,6 +14,8 @@ export interface ModrinthSearchResult {
   latest_version: string;
   client_side: string;
   server_side: string;
+  icon_url?: string | null;
+  color?: number | null;
 }
 
 export interface ModrinthSearchResponse {
@@ -31,8 +33,130 @@ export interface VersionFileInfo {
   primary: boolean;
 }
 
+export interface ModrinthProject {
+  id: string;
+  slug: string;
+  title: string;
+  description: string;
+  body: string;
+  categories: string[];
+  additional_categories: string[];
+  game_versions: string[];
+  loaders: string[];
+  downloads: number;
+  followers: number;
+  published: string;
+  updated: string;
+  issues_url: string | null;
+  source_url: string | null;
+  wiki_url: string | null;
+  discord_url: string | null;
+  license: { id: string; name: string; url: string | null } | null;
+  client_side: string;
+  server_side: string;
+  project_type: string;
+}
+
+export interface ModrinthTeamMember {
+  role: string;
+  username: string;
+}
+
+export interface ModrinthVersion {
+  id: string;
+  name: string;
+  version_number: string;
+  version_type: 'release' | 'beta' | 'alpha';
+  game_versions: string[];
+  loaders: string[];
+  date_published: string;
+  downloads: number;
+  changelog: string | null;
+  files: VersionFileInfo[];
+}
+
 const MODRINTH_API_BASE = 'https://api.modrinth.com/v2';
 const USER_AGENT = 'RawCraftLauncher/1.0.0 (github.com/rawcraft)';
+
+async function mrFetch(path: string): Promise<any> {
+  const res = await fetch(`${MODRINTH_API_BASE}${path}`, {
+    headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
+  });
+  if (!res.ok) throw new Error(`Modrinth API error: ${res.status} ${res.statusText}`);
+  return res.json();
+}
+
+/** Full project record for the detail view. Accepts project id or slug. */
+export async function getModrinthProject(idOrSlug: string): Promise<ModrinthProject> {
+  const d = await mrFetch(`/project/${encodeURIComponent(idOrSlug)}`);
+  return {
+    id: String(d.id),
+    slug: String(d.slug),
+    title: String(d.title || ''),
+    description: String(d.description || ''),
+    body: String(d.body || ''),
+    categories: d.categories || [],
+    additional_categories: d.additional_categories || [],
+    game_versions: d.game_versions || [],
+    loaders: d.loaders || [],
+    downloads: Number(d.downloads || 0),
+    followers: Number(d.followers || 0),
+    published: String(d.published || ''),
+    updated: String(d.updated || ''),
+    issues_url: d.issues_url || null,
+    source_url: d.source_url || null,
+    wiki_url: d.wiki_url || null,
+    discord_url: d.discord_url || null,
+    license: d.license
+      ? {
+          id: d.license.id || '',
+          name: d.license.name?.trim() || d.license.id || 'Custom',
+          url: d.license.url || null,
+        }
+      : null,
+    client_side: String(d.client_side || ''),
+    server_side: String(d.server_side || ''),
+    project_type: String(d.project_type || ''),
+  };
+}
+
+/** Team members (creators) — Modrinth project records only carry a team id. */
+export async function getModrinthMembers(idOrSlug: string): Promise<ModrinthTeamMember[]> {
+  try {
+    const rows = await mrFetch(`/project/${encodeURIComponent(idOrSlug)}/members`);
+    if (!Array.isArray(rows)) return [];
+    return rows.map((m: any) => ({
+      role: String(m.role || 'Member'),
+      username: String(m.user?.username || 'unknown'),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/** All published versions, newest first. */
+export async function getModrinthVersions(idOrSlug: string): Promise<ModrinthVersion[]> {
+  const rows = await mrFetch(`/project/${encodeURIComponent(idOrSlug)}/version`);
+  if (!Array.isArray(rows)) return [];
+  return rows.map((v: any) => ({
+    id: String(v.id),
+    name: String(v.name || ''),
+    version_number: String(v.version_number || ''),
+    version_type: v.version_type || 'release',
+    game_versions: v.game_versions || [],
+    loaders: v.loaders || [],
+    date_published: String(v.date_published || ''),
+    downloads: Number(v.downloads || 0),
+    changelog: v.changelog || null,
+    files: (v.files || []).map((f: any) => ({
+      url: String(f.url),
+      filename: String(f.filename),
+      versionNumber: String(v.version_number || ''),
+      size: Number(f.size || 0),
+      primary: Boolean(f.primary),
+    })),
+  }));
+}
 
 export async function searchModrinth(params: {
   query?: string;
@@ -41,16 +165,17 @@ export async function searchModrinth(params: {
   loader?: string;
   offset?: number;
   limit?: number;
+  index?: 'relevance' | 'downloads' | 'follows' | 'newest' | 'updated';
 }): Promise<ModrinthSearchResponse> {
-  const { query = '', projectType, gameVersion, loader, offset = 0, limit = 20 } = params;
+  const { query = '', projectType, gameVersion, loader, offset = 0, limit = 20, index } = params;
 
   const facets: string[][] = [[`project_type:${projectType}`]];
 
-  if (gameVersion) {
+  if (gameVersion && gameVersion !== 'all') {
     facets.push([`versions:${gameVersion}`]);
   }
 
-  if (loader && (projectType === 'mod' || projectType === 'modpack')) {
+  if (loader && loader !== 'all' && (projectType === 'mod' || projectType === 'modpack')) {
     const loaderLower = loader.toLowerCase();
     if (loaderLower !== 'vanilla') {
       facets.push([`categories:${loaderLower}`]);
@@ -60,6 +185,9 @@ export async function searchModrinth(params: {
   const url = new URL(`${MODRINTH_API_BASE}/search`);
   if (query.trim()) {
     url.searchParams.set('query', query.trim());
+  }
+  if (index) {
+    url.searchParams.set('index', index);
   }
   url.searchParams.set('facets', JSON.stringify(facets));
   url.searchParams.set('offset', offset.toString());

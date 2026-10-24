@@ -36,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
       }}
     >
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '16px' }}>
-        <h2 style={{ fontSize: '26px', letterSpacing: '1px' }}>RAWCRAFT // ENGINE</h2>
+        <h2 style={{ fontSize: 'var(--type-h2, 24px)', fontWeight: 800, letterSpacing: '0.04em' }}>RAWCRAFT // ENGINE</h2>
         <span className="tiny-text mono-text" style={{ color: 'var(--color-disabled-text)' }}>
           v2.0-MODRINTH
         </span>
@@ -50,7 +50,7 @@ export const Header: React.FC<HeaderProps> = ({
             className={`chip-filter ${authMode === 'OFFLINE' ? 'active' : ''}`}
             onClick={() => onUpdateSettings({ ...settings, authMode: 'OFFLINE' })}
             disabled={isRunning}
-            style={{ fontSize: '10px' }}
+            style={{ fontSize: '11px' }}
           >
             OFFLINE [SK-MODE]
           </button>
@@ -59,7 +59,7 @@ export const Header: React.FC<HeaderProps> = ({
             className={`chip-filter ${authMode === 'MICROSOFT' ? 'active' : ''}`}
             onClick={() => onUpdateSettings({ ...settings, authMode: 'MICROSOFT' })}
             disabled={isRunning}
-            style={{ fontSize: '10px' }}
+            style={{ fontSize: '11px' }}
           >
             MICROSOFT
           </button>

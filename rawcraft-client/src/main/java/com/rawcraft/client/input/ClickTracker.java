@@ -1,91 +1,50 @@
 package com.rawcraft.client.input;
 
-import com.rawcraft.client.config.ConfigManager;
-import net.minecraft.client.Minecraft;
-
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-public class ClickTracker {
-    private static ClickTracker instance;
-    private final Deque<Long> leftClicks = new ArrayDeque<>();
-    private final Deque<Long> rightClicks = new ArrayDeque<>();
+/**
+ * Rolling one-second click history for the CPS HUD mod.
+ *
+ * <p>Fed by {@code MouseHandlerMixin} on every button press, so a click is counted exactly once no
+ * matter how fast it is. Sampling {@code isLeftPressed()} at 20 tps would miss anything under 50 ms.
+ */
+public final class ClickTracker {
+    private static final Deque<Long> LEFT = new ArrayDeque<>();
+    private static final Deque<Long> RIGHT = new ArrayDeque<>();
 
-    private ClickTracker() {}
-
-    public static synchronized ClickTracker getInstance() {
-        if (instance == null) {
-            instance = new ClickTracker();
-        }
-        return instance;
+    private ClickTracker() {
     }
 
-    public synchronized void recordClick(int button) {
-        boolean ignoreOnScreen = ConfigManager.getInstance().getConfig().cps.ignoreWhenScreenOpen;
-        if (ignoreOnScreen) {
-            try {
-                Minecraft mc = Minecraft.getInstance();
-                if (mc.gui != null && mc.gui.screen() != null) {
-                    return; // Ignore clicks when any UI screen is open
-                }
-            } catch (Throwable ignored) {}
-        }
-
-        long now = System.nanoTime();
+    public static void record(int button) {
+        long now = System.currentTimeMillis();
         if (button == 0) {
-            leftClicks.addLast(now);
+            LEFT.addLast(now);
         } else if (button == 1) {
-            rightClicks.addLast(now);
+            RIGHT.addLast(now);
+        } else {
+            return;
         }
+        prune(now);
     }
 
-    public synchronized void recordLeftClick() {
-        recordClick(0);
+    public static int leftCps() {
+        prune(System.currentTimeMillis());
+        return LEFT.size();
     }
 
-    public synchronized void recordRightClick() {
-        recordClick(1);
+    public static int rightCps() {
+        prune(System.currentTimeMillis());
+        return RIGHT.size();
     }
 
-    public synchronized int getLeftCps() {
-        double windowSec = getWindowSec();
-        purgeOldClicks(leftClicks, windowSec);
-        return (int) Math.round(leftClicks.size() / windowSec);
-    }
-
-    public synchronized int getRightCps() {
-        double windowSec = getWindowSec();
-        purgeOldClicks(rightClicks, windowSec);
-        return (int) Math.round(rightClicks.size() / windowSec);
-    }
-
-    public synchronized int getTotalCps() {
-        return getLeftCps() + getRightCps();
-    }
-
-    private double getWindowSec() {
-        double sec = ConfigManager.getInstance().getConfig().cps.samplingWindowSec;
-        return Math.max(0.5, Math.min(5.0, sec));
-    }
-
-    public long getWindowMs() {
-        return (long) (getWindowSec() * 1000.0);
-    }
-
-    public void setWindowMs(long windowMs) {
-        double sec = windowMs / 1000.0;
-        ConfigManager.getInstance().update(cfg -> cfg.cps.samplingWindowSec = Math.max(0.5, Math.min(5.0, sec)));
-    }
-
-    private void purgeOldClicks(Deque<Long> queue, double windowSec) {
-        long thresholdNanos = System.nanoTime() - (long) (windowSec * 1_000_000_000L);
-        while (!queue.isEmpty() && queue.peekFirst() < thresholdNanos) {
-            queue.pollFirst();
+    private static void prune(long now) {
+        long cutoff = now - 1000L;
+        while (!LEFT.isEmpty() && LEFT.peekFirst() < cutoff) {
+            LEFT.pollFirst();
         }
-    }
-
-    public synchronized void reset() {
-        leftClicks.clear();
-        rightClicks.clear();
+        while (!RIGHT.isEmpty() && RIGHT.peekFirst() < cutoff) {
+            RIGHT.pollFirst();
+        }
     }
 }

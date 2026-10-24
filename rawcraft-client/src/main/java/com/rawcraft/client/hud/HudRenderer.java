@@ -1,64 +1,55 @@
 package com.rawcraft.client.hud;
 
-import com.rawcraft.client.config.ConfigManager;
+import com.rawcraft.client.mod.ClientMod;
+import com.rawcraft.client.mod.HudMod;
+import com.rawcraft.client.mod.ModManager;
+import com.rawcraft.client.ui.theme.Draw;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
-public class HudRenderer {
+/**
+ * Draws every enabled {@link HudMod}.
+ *
+ * <p>Called from {@code HudMixin} at the tail of the vanilla HUD pass. A disabled mod is skipped
+ * before any matrix or draw work happens, which is what keeps disabled mods at zero cost.
+ */
+public final class HudRenderer {
+    private static final int BACKGROUND = 0x66000000;
 
-    public static void render(GuiGraphicsExtractor extractor, DeltaTracker deltaTracker) {
+    private HudRenderer() {
+    }
+
+    public static void render(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc == null) return;
-
-        // 1. F1 Hide GUI check
-        if (mc.gui != null && mc.gui.hud != null && mc.gui.hud.isHidden()) {
+        if (mc == null) {
             return;
         }
+        int screenWidth = graphics.guiWidth();
+        int screenHeight = graphics.guiHeight();
 
-        // 2. Hide when screen is open (e.g. inventory, pause, chat) unless in HUD Editor
-        boolean inEditor = mc.gui != null && mc.gui.screen() != null && mc.gui.screen().getClass().getSimpleName().contains("HudEditor");
-        if (!inEditor && mc.gui != null && mc.gui.screen() != null) {
-            // Keep chat visible if chat screen is open, but do not render full HUD over pause/inventory
-            String screenName = mc.gui.screen().getClass().getSimpleName();
-            if (!screenName.toLowerCase().contains("chat")) {
-                return;
+        for (ClientMod mod : ModManager.get().mods()) {
+            if (!(mod instanceof HudMod hud) || !hud.enabled()) {
+                continue;
             }
-        }
+            int x = hud.resolveX(screenWidth);
+            int y = hud.resolveY(screenHeight);
+            float scale = hud.scale.asFloat();
 
-        // 3. F3 Debug Screen check
-        boolean hideOnF3 = ConfigManager.getInstance().getConfig().hud.hideOnF3;
-        if (hideOnF3 && mc.gui != null && mc.gui.hud != null && mc.gui.hud.getDebugOverlay() != null) {
-            if (mc.gui.hud.getDebugOverlay().showDebugScreen()) {
-                return;
+            graphics.pose().pushMatrix();
+            graphics.pose().translate((float) x, (float) y);
+            graphics.pose().scale(scale, scale);
+            if (hud.background.get()) {
+                Draw.rounded(graphics, -3, -3, hud.width() + 6, hud.height() + 6, 4, BACKGROUND);
             }
-        }
-
-        int screenW = mc.getWindow().getGuiScaledWidth();
-        int screenH = mc.getWindow().getGuiScaledHeight();
-
-        // 4. Render all enabled widgets
-        for (HudWidget widget : HudManager.getInstance().getWidgets()) {
-            if (widget.isEnabled() || inEditor) {
-                try {
-                    widget.renderWidget(extractor, deltaTracker, screenW, screenH, inEditor);
-                } catch (Throwable t) {
-                    // Fail-safe: one widget render error never crashes the HUD or game
-                }
+            try {
+                hud.render(graphics, 0, 0);
+            } catch (Throwable t) {
+                // A broken HUD mod must never take the whole frame down.
+                hud.setEnabled(false);
+                ModManager.get().markDirty();
             }
+            graphics.pose().popMatrix();
         }
-    }
-
-    public static boolean shouldCancelVanillaCrosshair() {
-        HudWidget crosshair = HudManager.getInstance().getWidget("crosshair");
-        return crosshair != null && crosshair.isEnabled();
-    }
-
-    public static boolean shouldHideVanillaEffects() {
-        HudWidget potions = HudManager.getInstance().getWidget("potions");
-        if (potions instanceof com.rawcraft.client.hud.widgets.PotionHudWidget pw) {
-            return pw.isEnabled() && pw.isHideVanilla();
-        }
-        return false;
     }
 }

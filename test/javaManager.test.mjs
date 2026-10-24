@@ -4,6 +4,8 @@ import { getRequiredJavaVersion, detectSystemJava, resolveJavaPath } from '../se
 console.log('Running javaManager unit tests...');
 
 // 1. Version checks
+assert.strictEqual(getRequiredJavaVersion('26.2'), 25, '26.2 must require Java 25');
+assert.strictEqual(getRequiredJavaVersion('25.1'), 25, '25.1 must require Java 25');
 assert.strictEqual(getRequiredJavaVersion('1.21.4'), 21, '1.21.4 must require Java 21');
 assert.strictEqual(getRequiredJavaVersion('1.21.0'), 21, '1.21.0 must require Java 21');
 assert.strictEqual(getRequiredJavaVersion('1.20.5'), 21, '1.20.5 must require Java 21');

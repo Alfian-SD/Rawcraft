@@ -1,471 +1,314 @@
 package com.rawcraft.client.ui;
 
-import com.rawcraft.client.config.ConfigManager;
-import com.rawcraft.client.hud.HudAnchor;
-import com.rawcraft.client.hud.HudManager;
-import com.rawcraft.client.hud.HudWidget;
-import com.rawcraft.client.ui.components.RawCraftButton;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
+import com.rawcraft.client.mod.ClientMod;
+import com.rawcraft.client.mod.HudAnchor;
+import com.rawcraft.client.mod.HudMod;
+import com.rawcraft.client.mod.ModManager;
+import com.rawcraft.client.ui.icon.IconSet;
+import com.rawcraft.client.ui.theme.Draw;
+import com.rawcraft.client.ui.theme.Theme;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.List;
 
+/**
+ * Drag-and-drop HUD editor.
+ *
+ * <p>Every enabled {@link HudMod} is drawn at its live position with a dashed selection frame.
+ * Dragging snaps to the nearest {@link HudAnchor} and writes {@code offsetX}/{@code offsetY} back to
+ * the mod, so the layout survives a restart. Positions are saved on close.
+ */
 public class HudEditorScreen extends Screen {
+    private final Screen parent;
+    private final ModManager mods = ModManager.get();
 
-    private final Screen parentScreen;
-    private HudWidget selectedWidget;
-    private boolean isDragging = false;
-    private int dragStartOffsetX = 0;
-    private int dragStartOffsetY = 0;
+    private HudMod dragging;
+    private int dragGrabX;
+    private int dragGrabY;
+    private boolean moved;
 
-    // Snapping state
-    private boolean snapToGrid = true;
-    private boolean snappedCenterX = false;
-    private boolean snappedCenterY = false;
+    private HudMod selected;
 
-    // Undo History (up to 20 steps)
-    public static class WidgetStateSnapshot {
-        public final String widgetName;
-        public final HudAnchor anchor;
-        public final int offsetX;
-        public final int offsetY;
-        public final double scale;
-
-        public WidgetStateSnapshot(HudWidget w) {
-            this.widgetName = w.getName();
-            this.anchor = w.getAnchor();
-            this.offsetX = w.getOffsetX();
-            this.offsetY = w.getOffsetY();
-            this.scale = w.getScale();
-        }
-    }
-    private final Deque<WidgetStateSnapshot> undoStack = new ArrayDeque<>();
-
-    // Context Menu
-    private boolean contextMenuOpen = false;
-    private int contextMenuX = 0;
-    private int contextMenuY = 0;
-
-    // Inspector buttons
-    private final List<RawCraftButton> inspectorButtons = new ArrayList<>();
-
-    public HudEditorScreen(Screen parentScreen) {
-        super(Component.literal("RawCraft HUD Studio"));
-        this.parentScreen = parentScreen;
-        this.selectedWidget = HudManager.getInstance().getWidget("fps");
-    }
-
-    public void selectWidget(HudWidget w) {
-        this.selectedWidget = w;
-        initInspector();
+    public HudEditorScreen(Screen parent) {
+        super(Component.literal("HUD Editor"));
+        this.parent = parent;
     }
 
     @Override
     protected void init() {
-        super.init();
-        HudManager.getInstance().updateAllScreenPositions(this.width, this.height);
-        initInspector();
-    }
-
-    private void initInspector() {
-        inspectorButtons.clear();
-        int barY = this.height - 34;
-        int btnH = 22;
-
-        // 1. Cycle Anchor button
-        String anchorName = (selectedWidget != null) ? selectedWidget.getAnchor().name() : "NONE";
-        inspectorButtons.add(new RawCraftButton(150, barY, 110, btnH, "Anchor: " + anchorName, () -> {
-            if (selectedWidget != null) {
-                pushUndoState();
-                HudAnchor[] anchors = HudAnchor.values();
-                int next = (selectedWidget.getAnchor().ordinal() + 1) % anchors.length;
-                selectedWidget.setAnchor(anchors[next]);
-                selectedWidget.updateScreenPosition(this.width, this.height);
-                initInspector();
-                ConfigManager.getInstance().save();
-            }
-        }));
-
-        // 2. Scale controls [-] [1.0x] [+]
-        inspectorButtons.add(new RawCraftButton(266, barY, 26, btnH, "-", () -> {
-            if (selectedWidget != null) {
-                pushUndoState();
-                selectedWidget.setScale(selectedWidget.getScale() - 0.1);
-                selectedWidget.updateScreenPosition(this.width, this.height);
-                initInspector();
-                ConfigManager.getInstance().save();
-            }
-        }));
-
-        String scaleText = String.format("%.1fx", (selectedWidget != null ? selectedWidget.getScale() : 1.0));
-        RawCraftButton scaleLabel = new RawCraftButton(296, barY, 44, btnH, scaleText, null);
-        scaleLabel.enabled = false;
-        inspectorButtons.add(scaleLabel);
-
-        inspectorButtons.add(new RawCraftButton(344, barY, 26, btnH, "+", () -> {
-            if (selectedWidget != null) {
-                pushUndoState();
-                selectedWidget.setScale(selectedWidget.getScale() + 0.1);
-                selectedWidget.updateScreenPosition(this.width, this.height);
-                initInspector();
-                ConfigManager.getInstance().save();
-            }
-        }));
-
-        // 3. Snap toggle button
-        inspectorButtons.add(new RawCraftButton(376, barY, 78, btnH, "Snap: " + (snapToGrid ? "ON" : "OFF"), () -> {
-            this.snapToGrid = !this.snapToGrid;
-            initInspector();
-        }));
-
-        // 4. Background Mode cycle
-        String bgMode = (selectedWidget != null) ? selectedWidget.getBackgroundMode() : "off";
-        inspectorButtons.add(new RawCraftButton(460, barY, 78, btnH, "BG: " + bgMode.toUpperCase(), () -> {
-            if (selectedWidget != null) {
-                pushUndoState();
-                String nextMode = "off".equalsIgnoreCase(bgMode) ? "solid" : ("solid".equalsIgnoreCase(bgMode) ? "translucent" : "off");
-                selectedWidget.setBackgroundMode(nextMode);
-                initInspector();
-                ConfigManager.getInstance().save();
-            }
-        }));
-
-        // 5. Reset Element Position
-        inspectorButtons.add(new RawCraftButton(544, barY, 68, btnH, "Reset", () -> {
-            if (selectedWidget != null) {
-                pushUndoState();
-                selectedWidget.setAnchor(HudAnchor.TOP_LEFT);
-                selectedWidget.setOffsetX(16);
-                selectedWidget.setOffsetY(16);
-                selectedWidget.setScale(1.0);
-                selectedWidget.updateScreenPosition(this.width, this.height);
-                initInspector();
-                ConfigManager.getInstance().save();
-            }
-        }));
-
-        // 6. Done / Exit button
-        RawCraftButton doneBtn = new RawCraftButton(this.width - 80, barY, 68, btnH, "Done ✓", () -> {
-            onClose();
-        });
-        doneBtn.active = true;
-        inspectorButtons.add(doneBtn);
-    }
-
-    private void pushUndoState() {
-        if (selectedWidget != null) {
-            if (undoStack.size() >= 20) {
-                undoStack.removeFirst();
-            }
-            undoStack.addLast(new WidgetStateSnapshot(selectedWidget));
-        }
-    }
-
-    private void performUndo() {
-        if (!undoStack.isEmpty()) {
-            WidgetStateSnapshot snap = undoStack.removeLast();
-            HudWidget w = HudManager.getInstance().getWidget(snap.widgetName);
-            if (w != null) {
-                w.setAnchor(snap.anchor);
-                w.setOffsetX(snap.offsetX);
-                w.setOffsetY(snap.offsetY);
-                w.setScale(snap.scale);
-                w.updateScreenPosition(this.width, this.height);
-                this.selectedWidget = w;
-                initInspector();
-                ConfigManager.getInstance().save();
-            }
-        }
-    }
-
-    @Override
-    public void extractRenderState(GuiGraphicsExtractor extractor, int mouseX, int mouseY, float delta) {
-        // 1. Subtle scrim overlay behind HUD Studio
-        extractor.fill(0, 0, this.width, this.height, 0x44000000);
-
-        Font font = this.font != null ? this.font : Minecraft.getInstance().font;
-
-        // 2. Draw Snap Guideline axes if snapped
-        if (snappedCenterX) {
-            extractor.fill(this.width / 2, 0, this.width / 2 + 1, this.height, 0x998B5CF6);
-        }
-        if (snappedCenterY) {
-            extractor.fill(0, this.height / 2, this.width, this.height / 2 + 1, 0x998B5CF6);
-        }
-
-        // 3. Render Widgets selection bounding boxes & labels
-        for (HudWidget w : HudManager.getInstance().getWidgets()) {
-            int sx = w.getScreenX();
-            int sy = w.getScreenY();
-            int sw = w.getScaledWidth();
-            int sh = w.getScaledHeight();
-
-            boolean isSel = (w == selectedWidget);
-            boolean isHov = w.isMouseOver(mouseX, mouseY);
-
-            if (isSel) {
-                // Bright purple selection outline
-                extractor.outline(sx - 1, sy - 1, sw + 2, sh + 2, RawCraftTheme.ACCENT);
-                // 4 Corner Anchor Dots
-                int dotSize = 3;
-                extractor.fill(sx - 2, sy - 2, sx + dotSize - 2, sy + dotSize - 2, 0xFFFFFFFF);
-                extractor.fill(sx + sw - 1, sy - 2, sx + sw + dotSize - 1, sy + dotSize - 2, 0xFFFFFFFF);
-                extractor.fill(sx - 2, sy + sh - 1, sx + dotSize - 2, sy + sh + dotSize - 1, 0xFFFFFFFF);
-                extractor.fill(sx + sw - 1, sy + sh - 1, sx + sw + dotSize - 1, sy + sh + dotSize - 1, 0xFFFFFFFF);
-
-                // Small element label above bounding box
-                String title = w.getName().toUpperCase();
-                int labelW = font.width(title) + 6;
-                extractor.fill(sx, sy - 12, sx + labelW, sy - 2, 0xCC120C22);
-                extractor.text(font, title, sx + 3, sy - 11, RawCraftTheme.ACCENT_HOVER, false);
-            } else if (isHov) {
-                // Dim outline when hovered
-                extractor.outline(sx - 1, sy - 1, sw + 2, sh + 2, 0x778B5CF6);
-            }
-        }
-
-        // 4. Bottom Inspector Bar
-        int barY = this.height - 38;
-        int barH = 32;
-        extractor.fill(10, barY, this.width - 10, barY + barH, 0xEB120C22);
-        extractor.outline(10, barY, this.width - 20, barH, RawCraftTheme.BORDER_SUBTLE);
-
-        // Selected title badge on left
-        String selName = (selectedWidget != null) ? selectedWidget.getName().toUpperCase() : "NO SELECTION";
-        extractor.text(font, "Element: §d" + selName, 20, barY + 11, RawCraftTheme.TEXT_PRIMARY, true);
-
-        // Render Inspector buttons
-        for (RawCraftButton btn : inspectorButtons) {
-            btn.render(extractor, font, mouseX, mouseY);
-        }
-
-        // 5. Context Menu popup
-        if (contextMenuOpen && selectedWidget != null) {
-            int menuW = 120;
-            int menuH = 68;
-            extractor.fill(contextMenuX, contextMenuY, contextMenuX + menuW, contextMenuY + menuH, 0xF0120C22);
-            extractor.outline(contextMenuX, contextMenuY, menuW, menuH, RawCraftTheme.ACCENT);
-
-            String[] items = {"Toggle Visibility", "Toggle Shadow", "Cycle Background", "Reset Position"};
-            int itemY = contextMenuY + 4;
-            for (String item : items) {
-                boolean itemHover = mouseX >= contextMenuX && mouseX <= contextMenuX + menuW && mouseY >= itemY && mouseY <= itemY + 14;
-                if (itemHover) {
-                    extractor.fill(contextMenuX + 1, itemY, contextMenuX + menuW - 1, itemY + 14, 0xFF2A1E50);
-                }
-                extractor.text(font, item, contextMenuX + 6, itemY + 3, itemHover ? 0xFFFFFFFF : RawCraftTheme.TEXT_PRIMARY, false);
-                itemY += 15;
-            }
-        }
-    }
-
-    @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
-        int mx = (int) event.x();
-        int my = (int) event.y();
-        int button = event.button();
-
-        // 1. Context Menu Click handling
-        if (contextMenuOpen && selectedWidget != null) {
-            int menuW = 120;
-            int menuH = 68;
-            if (mx >= contextMenuX && mx <= contextMenuX + menuW && my >= contextMenuY && my <= contextMenuY + menuH) {
-                int clickedIndex = (my - contextMenuY - 4) / 15;
-                pushUndoState();
-                if (clickedIndex == 0) {
-                    selectedWidget.setEnabled(!selectedWidget.isEnabled());
-                } else if (clickedIndex == 1) {
-                    selectedWidget.setShadow(!selectedWidget.isShadow());
-                } else if (clickedIndex == 2) {
-                    String cur = selectedWidget.getBackgroundMode();
-                    selectedWidget.setBackgroundMode("off".equalsIgnoreCase(cur) ? "solid" : ("solid".equalsIgnoreCase(cur) ? "translucent" : "off"));
-                } else if (clickedIndex == 3) {
-                    selectedWidget.setAnchor(HudAnchor.TOP_LEFT);
-                    selectedWidget.setOffsetX(16);
-                    selectedWidget.setOffsetY(16);
-                    selectedWidget.setScale(1.0);
-                }
-                selectedWidget.updateScreenPosition(this.width, this.height);
-                ConfigManager.getInstance().save();
-                initInspector();
-                contextMenuOpen = false;
-                return true;
-            } else {
-                contextMenuOpen = false;
-            }
-        }
-
-        // 2. Check Inspector Bar buttons
-        for (RawCraftButton btn : inspectorButtons) {
-            if (btn.mouseClicked(mx, my, button)) {
-                return true;
-            }
-        }
-
-        // 3. Right Click on Widget opens Context Menu
-        if (button == 1) { // RMB
-            for (HudWidget w : HudManager.getInstance().getWidgets()) {
-                if (w.isMouseOver(mx, my)) {
-                    selectWidget(w);
-                    this.contextMenuOpen = true;
-                    this.contextMenuX = Math.min(this.width - 130, mx);
-                    this.contextMenuY = Math.min(this.height - 80, my);
-                    return true;
-                }
-            }
-        }
-
-        // 4. Left Click on Widget selects & starts drag
-        if (button == 0) { // LMB
-            for (HudWidget w : HudManager.getInstance().getWidgets()) {
-                if (w.isMouseOver(mx, my)) {
-                    pushUndoState();
-                    selectWidget(w);
-                    this.isDragging = true;
-                    this.dragStartOffsetX = mx - w.getScreenX();
-                    this.dragStartOffsetY = my - w.getScreenY();
-                    return true;
-                }
-            }
-        }
-
-        return super.mouseClicked(event, isDoubleClick);
-    }
-
-    @Override
-    public boolean mouseReleased(MouseButtonEvent event) {
-        if (event.button() == 0 && isDragging) {
-            this.isDragging = false;
-            this.snappedCenterX = false;
-            this.snappedCenterY = false;
-            ConfigManager.getInstance().save();
-            initInspector();
-            return true;
-        }
-        return super.mouseReleased(event);
-    }
-
-    @Override
-    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
-        if (isDragging && selectedWidget != null) {
-            int mx = (int) event.x();
-            int my = (int) event.y();
-
-            int targetX = mx - dragStartOffsetX;
-            int targetY = my - dragStartOffsetY;
-
-            this.snappedCenterX = false;
-            this.snappedCenterY = false;
-
-            if (snapToGrid) {
-                // 1. Snap to 4px grid
-                targetX = (int) (Math.round((double) targetX / 4.0) * 4);
-                targetY = (int) (Math.round((double) targetY / 4.0) * 4);
-
-                // 2. Snap to center axes (within 6px threshold)
-                int midScreenX = this.width / 2;
-                int widgetMidX = targetX + selectedWidget.getScaledWidth() / 2;
-                if (Math.abs(widgetMidX - midScreenX) <= 6) {
-                    targetX = midScreenX - selectedWidget.getScaledWidth() / 2;
-                    this.snappedCenterX = true;
-                }
-
-                int midScreenY = this.height / 2;
-                int widgetMidY = targetY + selectedWidget.getScaledHeight() / 2;
-                if (Math.abs(widgetMidY - midScreenY) <= 6) {
-                    targetY = midScreenY - selectedWidget.getScaledHeight() / 2;
-                    this.snappedCenterY = true;
-                }
-            }
-
-            selectedWidget.dragTo(targetX, targetY, this.width, this.height);
-            return true;
-        }
-        return super.mouseDragged(event, deltaX, deltaY);
-    }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (verticalAmount != 0 && selectedWidget != null && selectedWidget.isMouseOver((int) mouseX, (int) mouseY)) {
-            pushUndoState();
-            double newScale = Math.round((selectedWidget.getScale() + (verticalAmount > 0 ? 0.1 : -0.1)) * 10.0) / 10.0;
-            selectedWidget.setScale(newScale);
-            selectedWidget.updateScreenPosition(this.width, this.height);
-            initInspector();
-            ConfigManager.getInstance().save();
-            return true;
-        }
-        return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
-    }
-
-    @Override
-    public boolean keyPressed(KeyEvent event) {
-        int key = event.key();
-
-        // 256 = GLFW.GLFW_KEY_ESCAPE
-        if (key == 256) {
-            onClose();
-            return true;
-        }
-
-        // Ctrl + Z (Undo)
-        if (key == 90 && (event.modifiers() & 2) != 0) {
-            performUndo();
-            return true;
-        }
-
-        // Keyboard arrow nudge (1px or 5px with Shift)
-        if (selectedWidget != null) {
-            int step = (event.modifiers() & 1) != 0 ? 5 : 1;
-            boolean nudged = false;
-            int curX = selectedWidget.getScreenX();
-            int curY = selectedWidget.getScreenY();
-
-            if (key == 263) { // LEFT
-                curX -= step;
-                nudged = true;
-            } else if (key == 262) { // RIGHT
-                curX += step;
-                nudged = true;
-            } else if (key == 265) { // UP
-                curY -= step;
-                nudged = true;
-            } else if (key == 264) { // DOWN
-                curY += step;
-                nudged = true;
-            }
-
-            if (nudged) {
-                pushUndoState();
-                selectedWidget.dragTo(curX, curY, this.width, this.height);
-                ConfigManager.getInstance().save();
-                return true;
-            }
-        }
-
-        return super.keyPressed(event);
+        mods.bootstrap();
+        selected = null;
     }
 
     @Override
     public void onClose() {
-        ConfigManager.getInstance().saveNow();
-        if (this.parentScreen != null) {
-            RawCraftMenuScreen.openScreen(this.parentScreen);
-        } else {
-            RawCraftMenuScreen.openScreen(null);
+        mods.save();
+        if (this.minecraft != null) {
+            this.minecraft.setScreenAndShow(parent);
         }
     }
 
     @Override
     public boolean isPauseScreen() {
-        return false;
+        return true;
+    }
+
+    private List<HudMod> editableMods() {
+        List<HudMod> out = new ArrayList<>();
+        for (ClientMod mod : mods.mods()) {
+            if (mod instanceof HudMod hud) {
+                out.add(hud);
+            }
+        }
+        return out;
+    }
+
+    @Override
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(graphics, mouseX, mouseY, partialTick);
+        // Lighter scrim than the menu: the point is to see the HUD against the world.
+        Draw.rect(graphics, 0, 0, this.width, this.height, 0x66000000);
+    }
+
+    @Override
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        int guiW = this.width;
+        int guiH = this.height;
+
+        for (HudMod hud : editableMods()) {
+            if (!hud.enabled()) {
+                continue;
+            }
+            int x = hud.resolveX(guiW);
+            int y = hud.resolveY(guiH);
+            int w = hud.scaledWidth();
+            int h = hud.scaledHeight();
+
+            boolean hovered = Draw.inside(mouseX, mouseY, x - 3, y - 3, w + 6, h + 6);
+            if (hovered || hud == selected) {
+                Draw.roundedOutline(graphics, x - 3, y - 3, w + 6, h + 6, 4,
+                        hud == selected ? Theme.ACCENT : Theme.BORDER_STRONG);
+            }
+            Draw.rounded(graphics, x - 1, y - 1, w + 2, h + 2, 3, 0x22000000);
+
+            graphics.pose().pushMatrix();
+            graphics.pose().translate((float) x, (float) y);
+            float scale = hud.scale.asFloat();
+            graphics.pose().scale(scale, scale);
+            hud.render(graphics, 0, 0);
+            graphics.pose().popMatrix();
+        }
+
+        renderToolbar(graphics, mouseX, mouseY);
+        renderSelectedPanel(graphics, guiW, guiH, mouseX, mouseY);
+    }
+
+    private void renderToolbar(GuiGraphicsExtractor g, int mouseX, int mouseY) {
+        int w = 300;
+        int h = 26;
+        int x = (this.width - w) / 2;
+        int y = this.height - h - 10;
+
+        Draw.softShadow(g, x, y, w, h, 8, 40);
+        Draw.rounded(g, x, y, w, h, Theme.RADIUS_CARD, Theme.PANEL);
+        Draw.roundedOutline(g, x, y, w, h, Theme.RADIUS_CARD, Theme.BORDER);
+        Draw.textCentered(g, this.font, "Drag to move  \u2022  Scroll to resize  \u2022  Esc to save",
+                x + w / 2, y + 9, Theme.TEXT_DIM);
+
+        int doneW = 54;
+        int doneX = x + w + 8;
+        boolean hovered = Draw.inside(mouseX, mouseY, doneX, y, doneW, h);
+        Draw.rounded(g, doneX, y, doneW, h, Theme.RADIUS_CARD,
+                hovered ? Theme.ACCENT_HOVER : Theme.ACCENT);
+        Draw.textCentered(g, this.font, "Done", doneX + doneW / 2, y + 9, Theme.TEXT);
+    }
+
+    private void renderSelectedPanel(GuiGraphicsExtractor g, int guiW, int guiH, int mouseX, int mouseY) {
+        if (selected == null) {
+            return;
+        }
+        int w = 168;
+        int h = 66;
+        int x = 10;
+        int y = 10;
+
+        Draw.rounded(g, x, y, w, h, Theme.RADIUS_CARD, Theme.PANEL);
+        Draw.roundedOutline(g, x, y, w, h, Theme.RADIUS_CARD, Theme.BORDER);
+        Draw.text(g, this.font, Draw.ellipsize(this.font, selected.displayName(), w - 20), x + 10, y + 8,
+                Theme.TEXT);
+        Draw.text(g, this.font, "Anchor: " + selected.anchor().label(), x + 10, y + 22, Theme.TEXT_DIM);
+        Draw.text(g, this.font, String.format("Scale: %.2fx", selected.scale.get()), x + 10, y + 34,
+                Theme.TEXT_DIM);
+
+        int anchorBtn = 20;
+        int anchorX = x + w - 10 - anchorBtn;
+        boolean anchorHovered = Draw.inside(mouseX, mouseY, anchorX, y + 20, anchorBtn, anchorBtn);
+        Draw.rounded(g, anchorX, y + 20, anchorBtn, anchorBtn, Theme.RADIUS_CONTROL,
+                anchorHovered ? Theme.CARD_HOVER : Theme.CARD);
+        Draw.roundedOutline(g, anchorX, y + 20, anchorBtn, anchorBtn, Theme.RADIUS_CONTROL,
+                Theme.BORDER);
+        IconSet.draw(g, "target", anchorX + 5, y + 25, 10, Theme.TEXT_DIM);
+
+        int resetX = x + w - 10 - anchorBtn;
+        boolean resetHovered = Draw.inside(mouseX, mouseY, resetX, y + 44, anchorBtn, anchorBtn);
+        Draw.rounded(g, resetX, y + 44, anchorBtn, anchorBtn, Theme.RADIUS_CONTROL,
+                resetHovered ? Theme.CARD_HOVER : Theme.CARD);
+        Draw.roundedOutline(g, resetX, y + 44, anchorBtn, anchorBtn, Theme.RADIUS_CONTROL,
+                Theme.BORDER);
+        IconSet.draw(g, "sync", resetX + 5, y + 49, 10, Theme.TEXT_DIM);
+    }
+
+    // ── input ────────────────────────────────────────────────────────────────
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
+        if (event.button() != 0) {
+            return super.mouseClicked(event, doubled);
+        }
+        double mouseX = event.x();
+        double mouseY = event.y();
+
+        int doneW = 54;
+        int doneH = 26;
+        int doneX = (this.width - 300) / 2 + 300 + 8;
+        int doneY = this.height - doneH - 10;
+        if (Draw.inside(mouseX, mouseY, doneX, doneY, doneW, doneH)) {
+            click();
+            onClose();
+            return true;
+        }
+
+        if (selected != null) {
+            int panelX = 10;
+            int panelY = 10;
+            int panelW = 168;
+            int anchorBtn = 20;
+            int anchorX = panelX + panelW - 10 - anchorBtn;
+            if (Draw.inside(mouseX, mouseY, anchorX, panelY + 20, anchorBtn, anchorBtn)) {
+                selected.setAnchor(selected.anchor().next());
+                click();
+                mods.markDirty();
+                return true;
+            }
+            if (Draw.inside(mouseX, mouseY, anchorX, panelY + 44, anchorBtn, anchorBtn)) {
+                selected.offsetX.reset();
+                selected.offsetY.reset();
+                selected.scale.reset();
+                click();
+                mods.markDirty();
+                return true;
+            }
+        }
+
+        // Topmost mod wins, so overlapping elements stay reachable.
+        List<HudMod> candidates = editableMods();
+        for (int i = candidates.size() - 1; i >= 0; i--) {
+            HudMod hud = candidates.get(i);
+            if (!hud.enabled()) {
+                continue;
+            }
+            int x = hud.resolveX(this.width);
+            int y = hud.resolveY(this.height);
+            if (Draw.inside(mouseX, mouseY, x, y, hud.scaledWidth(), hud.scaledHeight())) {
+                selected = hud;
+                dragging = hud;
+                dragGrabX = (int) mouseX - x;
+                dragGrabY = (int) mouseY - y;
+                moved = false;
+                click();
+                return true;
+            }
+        }
+        selected = null;
+        return super.mouseClicked(event, doubled);
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        if (dragging == null) {
+            return super.mouseDragged(event, dragX, dragY);
+        }
+        int targetX = (int) event.x() - dragGrabX;
+        int targetY = (int) event.y() - dragGrabY;
+
+        // Snap to the nearest anchor, then store the residual as an inward offset.
+        HudAnchor best = dragging.anchor();
+        int bestDistance = Integer.MAX_VALUE;
+        for (HudAnchor anchor : HudAnchor.values()) {
+            int ax = anchor.resolveX(this.width, dragging.scaledWidth(), 0);
+            int ay = anchor.resolveY(this.height, dragging.scaledHeight(), 0);
+            int distance = Math.abs(ax - targetX) + Math.abs(ay - targetY);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                best = anchor;
+            }
+        }
+        dragging.setAnchor(best);
+        dragging.offsetX.set((double) Math.abs(targetX - best.resolveX(this.width, dragging.scaledWidth(), 0)));
+        dragging.offsetY.set((double) Math.abs(targetY - best.resolveY(this.height, dragging.scaledHeight(), 0)));
+        moved = true;
+        mods.markDirty();
+        return true;
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        dragging = null;
+        return super.mouseReleased(event);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
+        // Resize whatever is under the cursor, falling back to the selection.
+        HudMod target = null;
+        List<HudMod> candidates = editableMods();
+        for (int i = candidates.size() - 1; i >= 0; i--) {
+            HudMod hud = candidates.get(i);
+            if (!hud.enabled()) {
+                continue;
+            }
+            int x = hud.resolveX(this.width);
+            int y = hud.resolveY(this.height);
+            if (Draw.inside(mouseX, mouseY, x, y, hud.scaledWidth(), hud.scaledHeight())) {
+                target = hud;
+                break;
+            }
+        }
+        if (target == null) {
+            target = selected;
+        }
+        if (target != null) {
+            target.scale.setFraction(target.scale.fraction() + vertical * 0.05);
+            mods.markDirty();
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, horizontal, vertical);
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        if (event.key() == 256) { // ESC
+            onClose();
+            return true;
+        }
+        if (mods.menuKeybind.matches(event.key())) {
+            onClose();
+            return true;
+        }
+        return super.keyPressed(event);
+    }
+
+    private void click() {
+        if (this.minecraft != null) {
+            this.minecraft.getSoundManager().play(
+                    SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+        }
     }
 }

@@ -23,6 +23,102 @@ export async function ensureLoaderProfile(
 
   const loaderKey = loader.toLowerCase();
 
+  // 0. RAWCRAFT CLIENT LOADER
+  if (loader === 'RAWCRAFT') {
+    const targetDir = path.join(versionsDir, 'rawcraft');
+    const targetJson = path.join(targetDir, 'rawcraft.json');
+
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
+
+    const fabricDir = path.join(versionsDir, 'fabric');
+    const fabricJson = path.join(fabricDir, 'fabric.json');
+
+    if (fs.existsSync(targetJson)) {
+      try {
+        const existing = JSON.parse(fs.readFileSync(targetJson, 'utf8'));
+        if (existing.inheritsFrom === gameVersion) {
+          log(`[RawCraft/LOADER]: Using existing RawCraft client profile for MC ${gameVersion}`);
+          const vanillaInRawcraft = path.join(targetDir, `${gameVersion}.json`);
+          const vanillaInFabric = path.join(fabricDir, `${gameVersion}.json`);
+          if (!fs.existsSync(vanillaInRawcraft) && fs.existsSync(vanillaInFabric)) {
+            fs.copyFileSync(vanillaInFabric, vanillaInRawcraft);
+          }
+          return 'rawcraft';
+        }
+      } catch {
+        // Corrupted, regenerate
+      }
+    }
+
+    log(`[RawCraft/LOADER]: Initializing RawCraft dedicated client engine for Minecraft ${gameVersion}...`);
+
+    let profileData = null;
+    if (fs.existsSync(fabricJson)) {
+      try {
+        const existingFabric = JSON.parse(fs.readFileSync(fabricJson, 'utf8'));
+        if (existingFabric.inheritsFrom === gameVersion) {
+          profileData = JSON.parse(JSON.stringify(existingFabric));
+          log(`[RawCraft/LOADER]: Re-purposing optimized runtime dependencies for RawCraft engine`);
+        }
+      } catch {
+        // Fall back to meta download
+      }
+    }
+
+    if (!profileData) {
+      let lVer = loaderVersion?.trim();
+      if (!lVer) {
+        try {
+          const metaRes = await fetch(`https://meta.fabricmc.net/v2/versions/loader/${encodeURIComponent(gameVersion)}`);
+          if (metaRes.ok) {
+            const list = await metaRes.json();
+            if (Array.isArray(list) && list.length > 0) {
+              lVer = list[0].loader?.version;
+            }
+          }
+        } catch (err) {
+          log(`[RawCraft/WARN]: Failed to query loader versions: ${err.message}`);
+        }
+      }
+      const finalLoaderVer = lVer || '0.20.0';
+      const profileUrl = `https://meta.fabricmc.net/v2/versions/loader/${encodeURIComponent(gameVersion)}/${encodeURIComponent(finalLoaderVer)}/profile/json`;
+      const res = await fetch(profileUrl);
+      if (res.ok) {
+        profileData = await res.json();
+      } else {
+        const fallbackUrl = `https://meta.fabricmc.net/v2/versions/loader/${encodeURIComponent(gameVersion)}/0.20.0/profile/json`;
+        const fbRes = await fetch(fallbackUrl);
+        if (!fbRes.ok) {
+          throw new Error(`Failed to resolve runtime libraries for Minecraft ${gameVersion}`);
+        }
+        profileData = await fbRes.json();
+      }
+    }
+
+    profileData.id = `rawcraft-client-${gameVersion}`;
+    profileData.inheritsFrom = gameVersion;
+    profileData.type = 'release';
+    profileData.mainClass = 'net.fabricmc.loader.impl.launch.knot.KnotClient';
+    if (!profileData.arguments) profileData.arguments = {};
+    if (!Array.isArray(profileData.arguments.jvm)) profileData.arguments.jvm = [];
+    if (!profileData.arguments.jvm.some(arg => typeof arg === 'string' && arg.includes('FabricMcEmu'))) {
+      profileData.arguments.jvm.push('-DFabricMcEmu= net.minecraft.client.main.Main ');
+    }
+
+    fs.writeFileSync(targetJson, JSON.stringify(profileData, null, 2));
+
+    const vanillaInRawcraft = path.join(targetDir, `${gameVersion}.json`);
+    const vanillaInFabric = path.join(fabricDir, `${gameVersion}.json`);
+    if (!fs.existsSync(vanillaInRawcraft) && fs.existsSync(vanillaInFabric)) {
+      fs.copyFileSync(vanillaInFabric, vanillaInRawcraft);
+    }
+
+    log(`[RawCraft/LOADER]: Dedicated RawCraft client profile saved to versions/rawcraft/rawcraft.json`);
+    return 'rawcraft';
+  }
+
   // 1. FABRIC
   if (loader === 'FABRIC') {
     const targetDir = path.join(versionsDir, 'fabric');
@@ -63,14 +159,14 @@ export async function ensureLoaderProfile(
       }
     }
 
-    const finalLoaderVer = lVer || '0.16.9';
+    const finalLoaderVer = lVer || '0.20.0';
     const profileUrl = `https://meta.fabricmc.net/v2/versions/loader/${encodeURIComponent(gameVersion)}/${encodeURIComponent(finalLoaderVer)}/profile/json`;
     log(`[RawCraft/LOADER]: Downloading Fabric profile from ${profileUrl}`);
 
     const res = await fetch(profileUrl);
     if (!res.ok) {
       // Fallback: try latest general loader version
-      const fallbackUrl = `https://meta.fabricmc.net/v2/versions/loader/${encodeURIComponent(gameVersion)}/0.16.10/profile/json`;
+      const fallbackUrl = `https://meta.fabricmc.net/v2/versions/loader/${encodeURIComponent(gameVersion)}/0.20.0/profile/json`;
       const fallbackRes = await fetch(fallbackUrl);
       if (!fallbackRes.ok) {
         throw new Error(`Fabric Meta API returned HTTP ${res.status} for MC ${gameVersion}. Verify Minecraft version.`);

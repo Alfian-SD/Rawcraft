@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title-b">
+  <title id="title-b">RawCraft — Concept B: Voxel Portal Prism</title>
+  <!-- Top Interlocking Voxel Chevron -->
+  <path fill="currentColor" d="
+    M 128 24
+    L 218 76
+    L 168 105
+    L 128 82
+    L 88 105
+    L 38 76
+    Z
+  "/>
+  <!-- Bottom Interlocking Voxel Chevron -->
+  <path fill="currentColor" d="
+    M 128 232
+    L 38 180
+    L 88 151
+    L 128 174
+    L 168 151
+    L 218 180
+    Z
+  "/>
+  <!-- Central Portal Diamond Core -->
+  <polygon fill="currentColor" points="
+    128,96
+    152,128
+    128,160
+    104,128
+  "/>
+</svg>

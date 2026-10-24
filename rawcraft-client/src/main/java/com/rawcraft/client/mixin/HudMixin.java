@@ -12,22 +12,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(value = Hud.class, remap = false)
 public class HudMixin {
 
-    @Inject(method = "extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/client/DeltaTracker;)V", at = @At("RETURN"))
-    private void onExtractRenderState(GuiGraphicsExtractor extractor, DeltaTracker deltaTracker, CallbackInfo ci) {
+    @Inject(method = "extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;Lnet/minecraft/client/DeltaTracker;)V",
+            at = @At("RETURN"))
+    private void rawcraft$renderMods(GuiGraphicsExtractor extractor, DeltaTracker deltaTracker, CallbackInfo ci) {
         HudRenderer.render(extractor, deltaTracker);
-    }
-
-    @Inject(method = "extractCrosshair", at = @At("HEAD"), cancellable = true, require = 0)
-    private void onExtractCrosshair(GuiGraphicsExtractor extractor, DeltaTracker deltaTracker, CallbackInfo ci) {
-        if (HudRenderer.shouldCancelVanillaCrosshair()) {
-            ci.cancel();
-        }
-    }
-
-    @Inject(method = "extractEffects", at = @At("HEAD"), cancellable = true, require = 0)
-    private void onExtractEffects(GuiGraphicsExtractor extractor, DeltaTracker deltaTracker, CallbackInfo ci) {
-        if (HudRenderer.shouldHideVanillaEffects()) {
-            ci.cancel();
-        }
     }
 }

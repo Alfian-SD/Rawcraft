@@ -1,44 +1,28 @@
 package com.rawcraft.client;
 
-import com.rawcraft.client.config.ConfigManager;
-import com.rawcraft.client.hud.HudManager;
-import com.rawcraft.client.input.KeybindManager;
-import com.rawcraft.client.module.ModuleManager;
-import com.rawcraft.client.performance.PerformanceManager;
-import com.rawcraft.client.util.RawCraftLogger;
+import com.rawcraft.client.mod.ModManager;
+import com.rawcraft.client.util.Log;
 import net.fabricmc.api.ClientModInitializer;
 
+/** Fabric client entrypoint. Registers the mod list and wires the shutdown save. */
 public class RawCraftClient implements ClientModInitializer {
-    public static final String MOD_ID = "rawcraft-client";
-    public static final String MOD_NAME = "RawCraft Client";
-    public static final String MOD_VERSION = "1.0.0";
-
     private static RawCraftClient instance;
 
     @Override
     public void onInitializeClient() {
         instance = this;
-        RawCraftLogger.info("==================================================");
-        RawCraftLogger.info("Initializing built-in client engine v" + MOD_VERSION);
-        RawCraftLogger.info("Target: Minecraft 26.2 (Fabric)");
-        RawCraftLogger.info("==================================================");
+        Log.info("Initializing " + RawCraft.CLIENT_NAME + " " + RawCraft.CLIENT_VERSION);
 
-        // 1. Load Configuration (v1 Schema with atomic save and auto-recovery)
-        ConfigManager.getInstance().load();
+        ModManager.get().bootstrap();
 
-        // 2. Initialize Managers
-        KeybindManager.getInstance();
-        ModuleManager.getInstance();
-        HudManager.getInstance();
-        PerformanceManager.getInstance();
-
-        // 3. Register Shutdown Hook for clean persistence
+        // Belt and braces: the debounced save normally already ran, but a clean exit should never
+        // lose the last toggle.
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            RawCraftLogger.info("Saving client configuration on JVM shutdown...");
-            ConfigManager.getInstance().saveNow();
-        }));
+            Log.info("Saving mods.json on shutdown");
+            ModManager.get().save();
+        }, "RawCraft-Shutdown"));
 
-        RawCraftLogger.info("Initialization complete. Press Right-Shift to open Client Menu.");
+        Log.info("Ready. Press Right-Shift to open the Mod Menu.");
     }
 
     public static RawCraftClient getInstance() {

@@ -1,5 +1,23 @@
+# Environment
 .env
-node_modules
-dist
-instances
-runtimes
+.env.*
+
+# Dependencies & Build
+node_modules/
+dist/
+*.tsbuildinfo
+rawcraft-client/build/
+rawcraft-client/.gradle/
+
+# Local Runtime Data
+instances/
+runtimes/
+logs/
+
+# AI & Harness tool metadata
+.agents/
+.codex/
+.superpowers/
+.opensession/
+.impeccable/
+

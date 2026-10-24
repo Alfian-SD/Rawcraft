@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RawCraft // Next-Gen UI Redesign Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --color-bg: #09080E;
+      --color-bg-deep: #0D0C13;
+      --color-rail: #14131D;
+      --color-rail-border: rgba(255, 255, 255, 0.08);
+
+      --color-purple: #7C6CF0;
+      --color-purple-hover: #8C72FF;
+      --color-purple-light: #A794FF;
+      --color-purple-glow: rgba(124, 108, 240, 0.45);
+      --color-purple-dim: rgba(124, 108, 240, 0.15);
+      --color-purple-shadow: rgba(124, 108, 240, 0.4);
+
+      --color-glass-pill: rgba(255, 255, 255, 0.06);
+      --color-glass-surface: rgba(20, 19, 29, 0.85);
+      --color-glass-modal: rgba(16, 15, 24, 0.94);
+      --color-border-glass: rgba(255, 255, 255, 0.10);
+
+      --color-text: #FFFFFF;
+      --color-text-muted: #9592A6;
+      --color-text-dark: #636075;
+      --color-success: #10B981;
+      --color-warning: #F59E0B;
+      --color-error: #EF4444;
+
+      --font-sans: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      --font-mono: 'Space Mono', monospace;
+
+      --radius-pill: 9999px;
+      --radius-card: 16px;
+      --radius-sm: 8px;
+    }
+
+    [data-loader="FORGE"] {
+      --color-purple: #DF6E26;
+      --color-purple-hover: #F27F38;
+      --color-purple-light: #FFA166;
+      --color-purple-glow: rgba(223, 110, 38, 0.45);
+      --color-purple-dim: rgba(223, 110, 38, 0.15);
+      --color-purple-shadow: rgba(223, 110, 38, 0.4);
+    }
+    [data-loader="NEOFORGE"] {
+      --color-purple: #E59B2A;
+      --color-purple-hover: #F6AD3D;
+      --color-purple-light: #FFC66E;
+      --color-purple-glow: rgba(229, 155, 42, 0.45);
+      --color-purple-dim: rgba(229, 155, 42, 0.15);
+      --color-purple-shadow: rgba(229, 155, 42, 0.4);
+    }
+    [data-loader="VANILLA"] {
+      --color-purple: #10B981;
+      --color-purple-hover: #34D399;
+      --color-purple-light: #6EE7B7;
+      --color-purple-glow: rgba(16, 185, 129, 0.45);
+      --color-purple-dim: rgba(16, 185, 129, 0.15);
+      --color-purple-shadow: rgba(16, 185, 129, 0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-sans);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+    }
+
+    /* Rail */
+    .nav-rail {
+      width: 72px;
+      height: 100%;
+      background-color: var(--color-rail);
+      border-right: 1px solid var(--color-rail-border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 0;
+      z-index: 20;
+    }
+    .nav-rail-logo {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: rgba(22, 21, 32, 0.85);
+      border: 1px solid var(--color-purple);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 16px var(--color-purple-shadow);
+      transition: all 0.2s ease;
+    }
+    .nav-rail-capsule {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 24px;
+      padding: 10px 8px;
+    }
+    .nav-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .nav-btn:hover { background: rgba(255, 255, 255, 0.08); color: #FFF; }
+    .nav-btn.active { background: var(--color-purple); color: #FFF; box-shadow: 0 0 16px var(--color-purple-glow); }
+
+    /* Main Area */
+    .main-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      position: relative;
+      overflow-y: auto;
+    }
+
+    /* Header */
+    .top-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 32px 12px 32px;
+      position: relative;
+      z-index: 10;
+    }
+    .glass-pill {
+      background: var(--color-glass-pill);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--color-border-glass);
+      border-radius: var(--radius-pill);
+      color: var(--color-text);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    .glass-pill:hover { background: rgba(255, 255, 255, 0.12); transform: translateY(-1px); }
+
+    /* Button System */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--color-purple) 0%, var(--color-purple-hover) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: var(--radius-pill);
+      color: #FFFFFF;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px var(--color-purple-shadow);
+      padding: 14px 40px;
+      font-size: 15px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      transition: all 0.18s ease;
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px) scale(1.02);
+      box-shadow: 0 6px 24px var(--color-purple-glow);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--color-border-glass);
+      border-radius: var(--radius-pill);
+      color: var(--color-text);
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 14px 28px;
+      font-size: 14px;
+      text-transform: uppercase;
+      transition: all 0.18s ease;
+    }
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.25); transform: translateY(-1px); }
+
+    .btn-sm { padding: 6px 14px; font-size: 12px; min-height: 30px; }
+
+    /* Hero */
+    .hero-container {
+      padding: 0 40px 32px 40px;
+      position: relative;
+      z-index: 5;
+    }
+    .hero-title {
+      font-size: 52px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      line-height: 1.05;
+      margin-bottom: 12px;
+      text-shadow: 0 4px 24px rgba(0,0,0,0.6);
+    }
+
+    /* Bento Deck */
+    .bento-deck {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 32px;
+    }
+    .bento-card {
+      background: rgba(20, 19, 29, 0.72);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: var(--radius-card);
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .bento-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.24);
+      background: rgba(28, 27, 40, 0.85);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+    .bento-metric-val { font-size: 20px; font-weight: 800; color: #FFF; }
+    .bento-metric-lbl { font-size: 11px; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; }
+
+    /* Drawer */
+    .drawer-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(5, 4, 10, 0.75);
+      backdrop-filter: blur(16px);
+      z-index: 50;
+      display: none;
+      justify-content: flex-end;
+    }
+    .drawer-overlay.open { display: flex; }
+    .drawer-dialog {
+      width: 720px;
+      max-width: 90vw;
+      height: 100%;
+      background: var(--color-glass-modal);
+      border-left: 1px solid var(--color-border-glass);
+      display: flex;
+      flex-direction: column;
+      box-shadow: -10px 0 40px rgba(0, 0, 0, 0.7);
+    }
+    .mod-card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body data-loader="FABRIC">
+  <!-- Nav Rail -->
+  <aside class="nav-rail">
+    <div class="nav-rail-logo" title="RawCraft Home">
+      <svg width="24" height="24" viewBox="0 0 256 256" fill="none">
+        <polygon fill="#A794FF" points="42,78 96,47 96,209 42,178" />
+        <path fill="#C4B5FF" fill-rule="evenodd" d="M 112 37 L 128 28 L 214 78 L 214 120 L 112 120 Z M 136 64 L 172 64 L 186 78 L 186 86 L 172 100 L 136 100 Z" />
+        <polygon fill="#8C72FF" points="136,136 214,136 214,178 128,228 128,172 164,136" />
+      </svg>
+    </div>
+
+    <div class="nav-rail-capsule">
+      <button class="nav-btn active" title="Hero Stage">⌂</button>
+      <button class="nav-btn" onclick="openDrawer('MODS')" title="Installed Mods">📦</button>
+      <button class="nav-btn" onclick="openDrawer('MODRINTH')" title="Modrinth Store">🛒</button>
+      <button class="nav-btn" onclick="openDrawer('CONFIG')" title="Configuration">⚙</button>
+    </div>
+
+    <div style="font-size: 11px; color: var(--color-text-muted); font-family: var(--font-mono);">v1.0</div>
+  </aside>
+
+  <!-- Main Stage -->
+  <main class="main-stage">
+    <!-- Header -->
+    <header class="top-header">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-weight: 800; letter-spacing: 0.08em;">RAWCRAFT</span>
+        <div class="glass-pill">
+          <span style="font-size: 11px; color: var(--color-text-muted);">PLAYING NOW:</span>
+          <strong>2,973</strong>
+        </div>
+        <!-- Loader Switcher Demo -->
+        <div class="glass-pill" style="gap: 4px;">
+          <span style="font-size: 10px; color: var(--color-text-muted);">THEME:</span>
+          <button onclick="setTheme('FABRIC')" style="background:none;border:none;color:#A794FF;cursor:pointer;font-weight:700;">FABRIC</button>
+          <button onclick="setTheme('FORGE')" style="background:none;border:none;color:#FFA166;cursor:pointer;font-weight:700;">FORGE</button>
+          <button onclick="setTheme('VANILLA')" style="background:none;border:none;color:#6EE7B7;cursor:pointer;font-weight:700;">VANILLA</button>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="glass-pill" onclick="alert('Command Palette: Press Ctrl+K in app')">
+          <span>🔍 Quick Search...</span>
+          <span style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-size: 10px;">Ctrl+K</span>
+        </div>
+        <div class="glass-pill">
+          <span>deadbound</span>
+          <span style="font-size: 11px; color: var(--color-purple-light);">LVL 4</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Content -->
+    <div class="hero-container">
+      <div style="margin-top: 40px; margin-bottom: 24px;">
+        <button class="glass-pill" style="padding: 5px 14px; font-size: 11px; margin-bottom: 16px;">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--color-purple);display:inline-block;"></span>
+          <span id="loader-label">FABRIC · 1.21.4</span>
+          <span style="color:var(--color-text-muted);font-size:10px;">STABLE</span>
+        </button>
+
+        <h1 class="hero-title" id="instance-title">ATMOSPHERIC SURVIVAL</h1>
+        <p style="color: var(--color-text-muted); max-width: 520px; line-height: 1.6; margin-bottom: 28px;">
+          Next-generation Minecraft 1.21.4 survival stack. Loaded with Iris shaders, Sodium render pipeline, and 4096MB tuned heap memory.
+        </p>
+
+        <div style="display: flex; gap: 16px;">
+          <button class="btn-primary" onclick="alert('Launch Minecraft dispatched!')">▶ PLAY</button>
+          <button class="btn-secondary" onclick="openDrawer('CONFIG')">CONFIGURE</button>
+        </div>
+      </div>
+
+      <!-- Bento Cards Section (Direction 2) -->
+      <div class="bento-deck">
+        <div class="bento-card" onclick="alert('Playtime telemetry modal')">
+          <div class="bento-metric-lbl">TOTAL PLAYTIME</div>
+          <div class="bento-metric-val">14.2 hrs</div>
+          <div style="font-size: 12px; color: var(--color-text-muted);">Active today · 5-day streak</div>
+        </div>
+
+        <div class="bento-card" onclick="openDrawer('CONFIG')">
+          <div class="bento-metric-lbl">ALLOCATED RAM</div>
+          <div class="bento-metric-val">4096 MB</div>
+          <div style="font-size: 12px; color: var(--color-text-muted);">Optimal G1GC Headroom</div>
+        </div>
+
+        <div class="bento-card" onclick="openDrawer('MODS')">
+          <div class="bento-metric-lbl">INSTALLED MODS</div>
+          <div class="bento-metric-val">18 Active</div>
+          <div style="font-size: 12px; color: var(--color-purple-light);">Sodium, Iris, Lithium...</div>
+        </div>
+
+        <div class="bento-card" onclick="alert('Connecting to play.rawcraft.gg')">
+          <div class="bento-metric-lbl">COMMUNITY REALM</div>
+          <div class="bento-metric-val" style="color: var(--color-success);">● 2,973 Online</div>
+          <div style="font-size: 12px; color: var(--color-text-muted);">play.rawcraft.gg · 24ms</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Slide-Over Drawer -->
+  <div id="drawerOverlay" class="drawer-overlay" onclick="closeDrawer()">
+    <div class="drawer-dialog" onclick="event.stopPropagation()">
+      <div style="padding: 24px 32px; border-bottom: 1px solid var(--color-border-glass); display: flex; justify-content: space-between; align-items: center;">
+        <h3 id="drawerTitle" style="font-size: 18px; font-weight: 800;">MODRINTH // REPOSITORY</h3>
+        <button class="glass-pill" onclick="closeDrawer()">✕ CLOSE</button>
+      </div>
+
+      <div style="flex: 1; overflow-y: auto; padding: 32px; display: flex; flex-direction: column; gap: 16px;">
+        <!-- Mod item card with icon and unified buttons -->
+        <div style="background: var(--color-glass-surface); border: 1px solid var(--color-border-glass); border-radius: var(--radius-card); padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+            <div style="display: flex; gap: 14px; align-items: center;">
+              <div class="mod-card-icon" style="background: #242233;">
+                <span style="font-weight: 800; font-size: 20px; color: var(--color-purple-light);">S</span>
+              </div>
+              <div>
+                <h4 style="font-size: 17px; font-weight: 700;">Sodium</h4>
+                <div style="font-size: 12px; color: var(--color-text-muted);">by jellysquid3 · 14.8M DL · ★ 32.1k</div>
+              </div>
+            </div>
+            <button class="btn-primary btn-sm" onclick="alert('Installed Sodium!')">+ INSTALL</button>
+          </div>
+          <p style="font-size: 13px; color: var(--color-text-muted);">A modern rendering engine and client-side optimization mod for Minecraft.</p>
+          <div style="display: flex; gap: 6px;">
+            <span class="glass-pill" style="font-size: 10px; padding: 2px 8px;">FABRIC</span>
+            <span class="glass-pill" style="font-size: 10px; padding: 2px 8px;">OPTIMIZATION</span>
+            <span class="glass-pill" style="font-size: 10px; padding: 2px 8px;">v0.6.0</span>
+          </div>
+        </div>
+
+        <div style="background: var(--color-glass-surface); border: 1px solid var(--color-border-glass); border-radius: var(--radius-card); padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+            <div style="display: flex; gap: 14px; align-items: center;">
+              <div class="mod-card-icon" style="background: #242233;">
+                <span style="font-weight: 800; font-size: 20px; color: var(--color-purple-light);">I</span>
+              </div>
+              <div>
+                <h4 style="font-size: 17px; font-weight: 700;">Iris Shaders</h4>
+                <div style="font-size: 12px; color: var(--color-text-muted);">by coderbot · 9.4M DL · ★ 18.3k</div>
+              </div>
+            </div>
+            <span style="background: rgba(16, 185, 129, 0.15); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.35); padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700;">✓ INSTALLED</span>
+          </div>
+          <p style="font-size: 13px; color: var(--color-text-muted);">Modern shaders mod for Minecraft compatible with existing OptiFine shader packs.</p>
+          <div style="display: flex; gap: 6px;">
+            <span class="glass-pill" style="font-size: 10px; padding: 2px 8px;">FABRIC</span>
+            <span class="glass-pill" style="font-size: 10px; padding: 2px 8px;">SHADERS</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setTheme(theme) {
+      document.body.setAttribute('data-loader', theme);
+      document.getElementById('loader-label').textContent = theme + ' · 1.21.4';
+    }
+    function openDrawer(tab) {
+      document.getElementById('drawerOverlay').classList.add('open');
+      document.getElementById('drawerTitle').textContent = tab + ' // MANAGEMENT';
+    }
+    function closeDrawer() {
+      document.getElementById('drawerOverlay').classList.remove('open');
+    }
+  </script>
+</body>
+</html>

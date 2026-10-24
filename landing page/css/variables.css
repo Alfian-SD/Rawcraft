@@ -1,0 +1,9 @@
+:root{
+  --primary:#B7F34A;--dark:#242A3B;--dark-2:#1b2030;--light:#F7F8F0;
+  --violet:#A78BFA;--orange:#FFBD69;--text:#202437;--muted:#727789;
+  --r-lg:22px;--r-md:14px;--r-sm:8px;
+  --shadow:0 10px 30px rgba(32,36,55,.14);
+  --font:"Trebuchet MS","Segoe UI",system-ui,sans-serif;
+  --h1:clamp(2.4rem,7vw + .5rem,5.2rem);--h2:clamp(1.7rem,3.5vw + .5rem,3rem);
+  --pad:clamp(56px,9vw,120px);--gut:clamp(16px,4vw,32px);
+}

@@ -32,6 +32,23 @@ assert.strictEqual(parsed.inheritsFrom, '1.21.4', 'inheritsFrom must be 1.21.4')
 assert(Array.isArray(parsed.libraries), 'libraries must be an array');
 assert(parsed.libraries.length > 0, 'libraries must not be empty');
 
+// 3. RAWCRAFT generates versions/rawcraft/rawcraft.json
+const rawcraftResult = await ensureLoaderProfile(
+  testInstanceDir,
+  '26.2',
+  'RAWCRAFT',
+  '1.0.0',
+  (m) => console.log('Test Log:', m)
+);
+
+assert.strictEqual(rawcraftResult, 'rawcraft', 'RawCraft should return "rawcraft"');
+const rawcraftJsonPath = path.join(testInstanceDir, 'versions', 'rawcraft', 'rawcraft.json');
+assert(fs.existsSync(rawcraftJsonPath), 'versions/rawcraft/rawcraft.json must exist');
+
+const parsedRawcraft = JSON.parse(fs.readFileSync(rawcraftJsonPath, 'utf8'));
+assert.strictEqual(parsedRawcraft.inheritsFrom, '26.2', 'inheritsFrom must be 26.2');
+assert.strictEqual(parsedRawcraft.mainClass, 'net.fabricmc.loader.impl.launch.knot.KnotClient');
+
 // Clean up
 fs.rmSync(testInstanceDir, { recursive: true, force: true });
 

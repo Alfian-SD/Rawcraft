@@ -1,0 +1,1538 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RawCraft Client // Native In-Game Click GUI & HUD Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        rawcraft: {
+                            bg: '#111318',
+                            sidebar: '#15171D',
+                            surface: '#1C1F27',
+                            elevated: '#242833',
+                            border: '#303542',
+                            accent: '#A5B4FC',
+                            textPrimary: '#F3F4F8',
+                            textSecondary: '#A4A9B7',
+                            success: '#55C99A',
+                            warning: '#E7B96C',
+                            error: '#EF777F'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background-color: #0d0f14;
+            background-image:
+                linear-gradient(rgba(48, 53, 66, 0.18) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(48, 53, 66, 0.18) 1px, transparent 1px);
+            background-size: 24px 24px;
+            color: #F3F4F8;
+            font-family: 'Inter', sans-serif;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #111318;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #303542;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #A5B4FC;
+        }
+
+        .hud-widget {
+            position: absolute;
+            z-index: 20;
+            border: 1px solid #303542;
+            background-color: rgba(17, 19, 24, 0.85);
+            transition: border-color 0.12s ease, box-shadow 0.12s ease;
+        }
+
+        .hud-edit-active .hud-widget {
+            cursor: grab;
+            border: 1px dashed #A5B4FC !important;
+            background-color: rgba(28, 31, 39, 0.92) !important;
+        }
+
+        .hud-edit-active .hud-widget:active {
+            cursor: grabbing;
+        }
+
+        .hud-edit-active .hud-widget.selected-widget {
+            border: 1.5px solid #A5B4FC !important;
+            box-shadow: 0 0 0 2px rgba(165, 180, 252, 0.25);
+        }
+
+        .key-box {
+            transition: background-color 0.05s ease, color 0.05s ease, border-color 0.05s ease;
+        }
+
+        .key-box.pressed {
+            background-color: #A5B4FC !important;
+            color: #111318 !important;
+            border-color: #A5B4FC !important;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            background: #111318;
+            border: 1px solid #303542;
+            height: 6px;
+            border-radius: 4px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 14px;
+            width: 14px;
+            border-radius: 3px;
+            background: #A5B4FC;
+            cursor: pointer;
+            border: 1px solid #111318;
+        }
+    </style>
+</head>
+
+<body class="antialiased selection:bg-[#A5B4FC] selection:text-[#111318]">
+
+    <!-- Custom Crosshair Layer -->
+    <div id="hud-crosshair" class="fixed inset-0 pointer-events-none z-10 flex items-center justify-center">
+        <svg id="crosshair-svg" width="24" height="24" viewBox="0 0 24 24"></svg>
+    </div>
+
+    <!-- Top Simulation Control Bar (Simulates In-Game Environment State) -->
+    <div
+        class="fixed top-2.5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2.5 px-3.5 py-1.5 rounded-md bg-[#111318] border border-[#303542] text-xs shadow-lg">
+        <span class="font-mono font-semibold text-[#A5B4FC] tracking-tight">RAWCRAFT CLIENT // SPEC PREVIEW</span>
+        <span class="text-[#303542]">|</span>
+        <span class="text-[#A4A9B7] hidden sm:inline">Keybind: <kbd id="top-keybind-badge"
+                class="px-1.5 py-0.5 bg-[#1C1F27] rounded text-[11px] font-mono text-[#F3F4F8] border border-[#303542]">R-SHIFT</kbd></span>
+        <button id="top-toggle-gui-btn"
+            class="px-2.5 py-1 rounded bg-[#242833] hover:bg-[#303542] text-[#F3F4F8] border border-[#303542] font-medium transition">
+            Toggle GUI
+        </button>
+        <button id="simulate-damage-btn"
+            class="px-2.5 py-1 rounded bg-[#242833] hover:border-[#E7B96C] text-[#E7B96C] border border-[#303542] font-medium transition"
+            title="Test real armor durability step-down">
+            Damage Armor
+        </button>
+    </div>
+
+    <!-- ==================== IN-GAME HUD OVERLAY LAYER ==================== -->
+    <div id="hud-layer" class="fixed inset-0 pointer-events-none z-20 overflow-hidden">
+
+        <!-- HUD Studio Interactive Inspector Bar (Visible when in HUD Editor mode) -->
+        <div id="hud-editor-toolbar"
+            class="hidden pointer-events-auto fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-[#111318] border border-[#303542] rounded-lg px-4 py-2.5 shadow-2xl flex flex-wrap items-center gap-4 text-xs">
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-[#A5B4FC]"></span>
+                <span class="font-semibold text-[#F3F4F8]">HUD Studio</span>
+                <span id="selected-widget-name"
+                    class="font-mono text-[#A5B4FC] px-2 py-0.5 rounded bg-[#1C1F27] border border-[#303542]">Select a
+                    widget</span>
+            </div>
+
+            <div class="flex items-center gap-2 border-l border-[#303542] pl-3">
+                <span class="text-[#A4A9B7]">Anchor:</span>
+                <select id="hud-inspector-anchor"
+                    class="bg-[#1C1F27] border border-[#303542] rounded px-2 py-1 text-xs font-mono text-[#F3F4F8] focus:outline-none focus:border-[#A5B4FC]">
+                    <option value="TOP_LEFT">TOP_LEFT</option>
+                    <option value="TOP_RIGHT">TOP_RIGHT</option>
+                    <option value="BOTTOM_LEFT">BOTTOM_LEFT</option>
+                    <option value="BOTTOM_RIGHT">BOTTOM_RIGHT</option>
+                    <option value="CENTER">CENTER</option>
+                </select>
+            </div>
+
+            <div class="flex items-center gap-2 border-l border-[#303542] pl-3">
+                <span class="text-[#A4A9B7]">Scale:</span>
+                <input id="hud-inspector-scale" type="range" min="75" max="135" value="100" class="w-20">
+                <span id="hud-inspector-scale-val" class="font-mono text-[#F3F4F8] w-9">1.00x</span>
+            </div>
+
+            <div class="flex items-center gap-2 border-l border-[#303542] pl-3">
+                <span class="text-[#A4A9B7]">Opacity:</span>
+                <input id="hud-inspector-opacity" type="range" min="35" max="100" value="90" class="w-20">
+                <span id="hud-inspector-opacity-val" class="font-mono text-[#F3F4F8] w-8">90%</span>
+            </div>
+
+            <div class="flex items-center gap-2 border-l border-[#303542] pl-3">
+                <button id="hud-reset-selected-btn"
+                    class="px-2.5 py-1 rounded bg-[#1C1F27] hover:bg-[#242833] border border-[#303542] text-[#A4A9B7] hover:text-[#F3F4F8] transition">
+                    Reset Widget
+                </button>
+                <button id="hud-reset-all-btn"
+                    class="px-2.5 py-1 rounded bg-[#1C1F27] hover:bg-[#242833] border border-[#303542] text-[#EF777F] transition">
+                    Reset All
+                </button>
+                <button id="hud-done-editing-btn"
+                    class="px-3 py-1 rounded bg-[#A5B4FC] text-[#111318] font-semibold transition">
+                    Return to GUI
+                </button>
+            </div>
+        </div>
+
+        <!-- 1. FPS Counter Widget -->
+        <div id="widget-fps" data-widget="fps"
+            class="hud-widget pointer-events-auto rounded px-3 py-1.5 font-mono text-xs flex items-center gap-2">
+            <span class="text-[#A4A9B7]">FPS</span>
+            <span id="hud-fps-val" class="font-bold text-[#F3F4F8]">144</span>
+            <span class="text-[#303542]">|</span>
+            <span id="hud-frametime-val" class="text-[11px] text-[#A4A9B7]">6.9 ms</span>
+        </div>
+
+        <!-- 2. Ping / Latency Widget -->
+        <div id="widget-ping" data-widget="ping"
+            class="hud-widget pointer-events-auto rounded px-3 py-1.5 font-mono text-xs flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#55C99A]"></span>
+            <span id="hud-ping-val" class="font-bold text-[#F3F4F8]">23 ms</span>
+            <span class="text-[#A4A9B7] text-[11px]">Connection</span>
+        </div>
+
+        <!-- 3. XYZ Coordinates Widget -->
+        <div id="widget-coords" data-widget="coords"
+            class="hud-widget pointer-events-auto rounded px-3 py-2 font-mono text-xs space-y-1 min-w-[170px]">
+            <div class="flex justify-between gap-3">
+                <span class="text-[#A4A9B7]">X / Y / Z</span>
+                <span id="hud-xyz-val" class="text-[#F3F4F8] font-semibold">184.3, 64.0, -412.8</span>
+            </div>
+            <div id="hud-coords-facing-row" class="flex justify-between gap-3 text-[11px]">
+                <span class="text-[#A4A9B7]">Facing</span>
+                <span class="text-[#A5B4FC]">North (-Z)</span>
+            </div>
+        </div>
+
+        <!-- 4. Keystrokes Widget -->
+        <div id="widget-keystrokes" data-widget="keystrokes"
+            class="hud-widget pointer-events-auto rounded p-1.5 font-mono text-xs">
+            <div class="grid grid-cols-3 gap-1 w-32 text-center font-semibold">
+                <div></div>
+                <div id="key-w"
+                    class="key-box h-8 rounded bg-[#1C1F27] border border-[#303542] flex items-center justify-center text-[#F3F4F8]">
+                    W</div>
+                <div></div>
+                <div id="key-a"
+                    class="key-box h-8 rounded bg-[#1C1F27] border border-[#303542] flex items-center justify-center text-[#F3F4F8]">
+                    A</div>
+                <div id="key-s"
+                    class="key-box h-8 rounded bg-[#1C1F27] border border-[#303542] flex items-center justify-center text-[#F3F4F8]">
+                    S</div>
+                <div id="key-d"
+                    class="key-box h-8 rounded bg-[#1C1F27] border border-[#303542] flex items-center justify-center text-[#F3F4F8]">
+                    D</div>
+            </div>
+            <div id="keystrokes-mouse-row"
+                class="grid grid-cols-2 gap-1 w-32 mt-1 text-center text-[11px] font-semibold">
+                <div id="key-lmb" class="key-box py-1 rounded bg-[#1C1F27] border border-[#303542] text-[#F3F4F8]">LMB
+                </div>
+                <div id="key-rmb" class="key-box py-1 rounded bg-[#1C1F27] border border-[#303542] text-[#F3F4F8]">RMB
+                </div>
+            </div>
+            <div id="key-space"
+                class="key-box w-32 mt-1 h-5 rounded bg-[#1C1F27] border border-[#303542] flex items-center justify-center">
+                <div class="w-10 h-0.5 bg-current"></div>
+            </div>
+        </div>
+
+        <!-- 5. CPS Counter Widget -->
+        <div id="widget-cps" data-widget="cps"
+            class="hud-widget pointer-events-auto rounded px-3 py-1.5 font-mono text-xs flex items-center gap-2">
+            <span class="text-[#A4A9B7]">CPS</span>
+            <span id="hud-cps-lmb" class="font-bold text-[#F3F4F8]">0</span>
+            <span class="text-[#303542]">|</span>
+            <span id="hud-cps-rmb" class="font-bold text-[#F3F4F8]">0</span>
+            <span id="hud-cps-window-tag" class="text-[10px] text-[#A4A9B7]">(1.0s)</span>
+        </div>
+
+        <!-- 6. Active Potion Effects Widget -->
+        <div id="widget-potions" data-widget="potions"
+            class="hud-widget pointer-events-auto rounded px-3 py-2 space-y-1.5 min-w-[165px]">
+            <div class="text-[10px] font-mono uppercase tracking-wider text-[#A4A9B7]">Active Effects</div>
+            <div class="flex items-center justify-between gap-3 text-xs">
+                <span class="text-[#F3F4F8] font-medium">Speed II</span>
+                <span id="potion-time-1" class="font-mono text-[#A5B4FC]">01:28</span>
+            </div>
+            <div class="flex items-center justify-between gap-3 text-xs">
+                <span class="text-[#F3F4F8] font-medium">Fire Resistance</span>
+                <span id="potion-time-2" class="font-mono text-[#55C99A]">03:45</span>
+            </div>
+        </div>
+
+        <!-- 7. Armor Durability Widget (Handles damageable & non-damageable items) -->
+        <div id="widget-armor" data-widget="armor" class="hud-widget pointer-events-auto rounded p-2.5 min-w-[175px]">
+            <div class="text-[10px] font-mono uppercase tracking-wider text-[#A4A9B7] mb-1.5 flex justify-between">
+                <span>Equipment</span>
+                <span id="armor-mode-label" class="text-[#A5B4FC]">RAW + %</span>
+            </div>
+            <div id="armor-list-container" class="space-y-1.5"></div>
+        </div>
+    </div>
+
+    <!-- ==================== RAWCRAFT NATIVE CLICK GUI ==================== -->
+    <div id="rawcraft-gui-backdrop" class="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/50">
+
+        <div
+            class="w-full max-w-5xl h-[80vh] max-h-[680px] bg-[#111318] border border-[#303542] rounded-lg flex flex-col md:flex-row overflow-hidden shadow-2xl">
+
+            <!-- Sidebar (#15171D) -->
+            <aside
+                class="w-full md:w-60 bg-[#15171D] border-b md:border-b-0 md:border-r border-[#303542] flex flex-col justify-between p-4 shrink-0">
+                <div>
+                    <!-- Brand Identity -->
+                    <div
+                        class="flex items-center justify-between md:justify-start gap-2.5 pb-4 mb-4 border-b border-[#303542]">
+                        <div
+                            class="w-7 h-7 rounded bg-[#242833] border border-[#303542] flex items-center justify-center text-[#A5B4FC] font-mono font-bold text-sm">
+                            R
+                        </div>
+                        <div>
+                            <div class="text-sm font-bold tracking-tight text-[#F3F4F8] flex items-center gap-1.5">
+                                RAWCRAFT
+                                <span
+                                    class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#1C1F27] text-[#A5B4FC] border border-[#303542]">CLIENT</span>
+                            </div>
+                            <div class="text-[11px] text-[#A4A9B7]">Fabric Mod Specification</div>
+                        </div>
+                    </div>
+
+                    <!-- 5 Required Navigation Sections -->
+                    <nav class="flex md:flex-col gap-1 overflow-x-auto" id="sidebar-nav">
+                        <button data-nav="home"
+                            class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded text-xs font-medium transition bg-[#242833] text-[#F3F4F8] border border-[#303542]">
+                            <i class="fa-solid fa-house w-4 text-center text-[#A5B4FC]"></i>
+                            <span>1. Home</span>
+                        </button>
+                        <button data-nav="performance"
+                            class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded text-xs font-medium transition text-[#A4A9B7] hover:bg-[#1C1F27] hover:text-[#F3F4F8] border border-transparent">
+                            <i class="fa-solid fa-sliders w-4 text-center"></i>
+                            <span>2. Performance</span>
+                        </button>
+                        <button data-nav="hud"
+                            class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded text-xs font-medium transition text-[#A4A9B7] hover:bg-[#1C1F27] hover:text-[#F3F4F8] border border-transparent">
+                            <i class="fa-solid fa-table-cells-large w-4 text-center"></i>
+                            <span>3. HUD Editor</span>
+                        </button>
+                        <button data-nav="modules"
+                            class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded text-xs font-medium transition text-[#A4A9B7] hover:bg-[#1C1F27] hover:text-[#F3F4F8] border border-transparent">
+                            <i class="fa-solid fa-cubes w-4 text-center"></i>
+                            <span>4. Modules</span>
+                        </button>
+                        <button data-nav="settings"
+                            class="nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded text-xs font-medium transition text-[#A4A9B7] hover:bg-[#1C1F27] hover:text-[#F3F4F8] border border-transparent">
+                            <i class="fa-solid fa-gear w-4 text-center"></i>
+                            <span>5. Settings</span>
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Bottom Quick HUD Studio Trigger & Config Status -->
+                <div class="hidden md:flex flex-col gap-2.5 pt-4 border-t border-[#303542]">
+                    <div class="p-2.5 rounded bg-[#1C1F27] border border-[#303542] text-[11px] space-y-1">
+                        <div class="flex justify-between">
+                            <span class="text-[#A4A9B7]">Config Schema</span>
+                            <span class="font-mono text-[#55C99A]">v1 (Valid)</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-[#A4A9B7]">Profile</span>
+                            <span id="sidebar-active-profile" class="font-mono text-[#F3F4F8]">Balanced</span>
+                        </div>
+                    </div>
+                    <button id="sidebar-launch-hud-studio"
+                        class="w-full py-2 px-3 rounded bg-[#242833] hover:bg-[#303542] border border-[#A5B4FC]/50 text-[#A5B4FC] font-semibold text-xs transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-up-down-left-right"></i>
+                        Open HUD Canvas
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Main Content Surface (#111318) -->
+            <main class="flex-1 flex flex-col h-full overflow-hidden">
+
+                <!-- Top Bar -->
+                <header
+                    class="px-6 py-3.5 bg-[#15171D] border-b border-[#303542] flex items-center justify-between gap-4">
+                    <div>
+                        <h1 id="view-header-title" class="text-sm font-bold text-[#F3F4F8]">Home & Architecture Overview
+                        </h1>
+                        <p id="view-header-subtitle" class="text-xs text-[#A4A9B7]">Phase A audit, live telemetry
+                            summary, and quick actions</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="header-close-gui-btn"
+                            class="px-2.5 py-1.5 rounded bg-[#1C1F27] hover:bg-[#242833] border border-[#303542] text-xs text-[#A4A9B7] hover:text-[#F3F4F8] transition">
+                            ESC / Close
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Views Container -->
+                <div class="flex-1 overflow-y-auto p-6 space-y-6">
+
+                    <!-- ==================== TAB 1: HOME ==================== -->
+                    <section id="tab-home" class="space-y-5">
+                        <!-- Phase A Status Banner -->
+                        <div class="p-4 rounded-md bg-[#1C1F27] border border-[#303542] space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span
+                                    class="text-xs font-mono uppercase tracking-wider text-[#A5B4FC] font-semibold">STEP
+                                    1 — REPOSITORY AUDIT & TARGET VERSION CHECK</span>
+                                <span
+                                    class="text-[11px] font-mono px-2 py-0.5 rounded bg-[#242833] text-[#E7B96C] border border-[#303542]">Awaiting
+                                    Local Repo Details</span>
+                            </div>
+                            <p class="text-xs text-[#A4A9B7] leading-relaxed">
+                                This interactive workspace previews the exact <strong class="text-[#F3F4F8]">RawCraft
+                                    Client</strong> color specification (<code class="text-[#A5B4FC]">#111318</code>,
+                                <code class="text-[#A5B4FC]">#15171D</code>, <code
+                                    class="text-[#A5B4FC]">#1C1F27</code>, <code class="text-[#A5B4FC]">#A5B4FC</code>),
+                                real-data HUD Studio anchoring, and versioned configuration schema while we confirm your
+                                exact target Minecraft version (<code class="text-[#F3F4F8]">1.20.1</code> / <code
+                                    class="text-[#F3F4F8]">1.20.4</code> / <code class="text-[#F3F4F8]">1.21.x</code>)
+                                and Electron mod-loading path.
+                            </p>
+                        </div>
+
+                        <!-- Quick Status Cards -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                            <div class="p-4 rounded-md bg-[#1C1F27] border border-[#303542]">
+                                <div class="text-xs text-[#A4A9B7]">Active HUD Widgets</div>
+                                <div id="home-active-widgets-count"
+                                    class="text-xl font-mono font-bold text-[#F3F4F8] mt-1">8 / 8</div>
+                                <div class="text-[11px] text-[#55C99A] mt-1">All telemetry sources active</div>
+                            </div>
+                            <div class="p-4 rounded-md bg-[#1C1F27] border border-[#303542]">
+                                <div class="text-xs text-[#A4A9B7]">Performance Profile</div>
+                                <div id="home-active-profile" class="text-xl font-mono font-bold text-[#A5B4FC] mt-1">
+                                    Balanced</div>
+                                <div class="text-[11px] text-[#A4A9B7] mt-1">Vanilla options snapshot saved</div>
+                            </div>
+                            <div class="p-4 rounded-md bg-[#1C1F27] border border-[#303542]">
+                                <div class="text-xs text-[#A4A9B7]">Click GUI Keybind</div>
+                                <div id="home-keybind-readout" class="text-xl font-mono font-bold text-[#F3F4F8] mt-1">
+                                    ShiftRight</div>
+                                <div class="text-[11px] text-[#A4A9B7] mt-1">Configurable in Settings tab</div>
+                            </div>
+                        </div>
+
+                        <!-- Architecture Package Map -->
+                        <div class="p-4 rounded-md bg-[#1C1F27] border border-[#303542] space-y-3">
+                            <h3 class="text-xs font-bold uppercase tracking-wider text-[#F3F4F8]">Java Fabric Mod
+                                Package Structure (`com.rawcraft.client`)</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs font-mono">
+                                <div class="p-2.5 rounded bg-[#111318] border border-[#303542]">
+                                    <div class="text-[#A5B4FC] font-semibold">RawCraftClient</div>
+                                    <div class="text-[11px] text-[#A4A9B7] font-sans mt-0.5">ClientModInitializer &
+                                        shutdown config flush</div>
+                                </div>
+                                <div class="p-2.5 rounded bg-[#111318] border border-[#303542]">
+                                    <div class="text-[#A5B4FC] font-semibold">ui / RawCraftScreen</div>
+                                    <div class="text-[11px] text-[#A4A9B7] font-sans mt-0.5">Native DrawContext GUI,
+                                        zero browser overhead</div>
+                                </div>
+                                <div class="p-2.5 rounded bg-[#111318] border border-[#303542]">
+                                    <div class="text-[#A5B4FC] font-semibold">performance</div>
+                                    <div class="text-[11px] text-[#A4A9B7] font-sans mt-0.5">Mutates real GameOptions +
+                                        snapshot restore</div>
+                                </div>
+                                <div class="p-2.5 rounded bg-[#111318] border border-[#303542]">
+                                    <div class="text-[#A5B4FC] font-semibold">hud / HudManager</div>
+                                    <div class="text-[11px] text-[#A4A9B7] font-sans mt-0.5">5-point anchoring, bounds
+                                        clamp & live preview</div>
+                                </div>
+                                <div class="p-2.5 rounded bg-[#111318] border border-[#303542]">
+                                    <div class="text-[#A5B4FC] font-semibold">modules & settings</div>
+                                    <div class="text-[11px] text-[#A4A9B7] font-sans mt-0.5">Typed settings, validation
+                                        & safe lifecycles</div>
+                                </div>
+                                <div class="p-2.5 rounded bg-[#111318] border border-[#303542]">
+                                    <div class="text-[#A5B4FC] font-semibold">config / ConfigManager</div>
+                                    <div class="text-[11px] text-[#A4A9B7] font-sans mt-0.5">Versioned JSON in
+                                        config/rawcraft/client.json</div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ==================== TAB 2: PERFORMANCE CENTER ==================== -->
+                    <section id="tab-performance" class="hidden space-y-5">
+                        <!-- Profile Selector (Low, Balanced, Quality) -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                            <button data-profile="Low"
+                                class="perf-profile-card text-left p-4 rounded-md bg-[#1C1F27] hover:bg-[#242833] border border-[#303542] transition">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-bold text-[#F3F4F8]">Low</span>
+                                    <span
+                                        class="text-[10px] font-mono px-2 py-0.5 rounded bg-[#111318] text-[#A4A9B7] border border-[#303542]">CONSERVATIVE</span>
+                                </div>
+                                <p class="text-xs text-[#A4A9B7] mt-1.5">Applies minimal particles, disables clouds and
+                                    entity shadows, reduces biome blend and view distance to lower rendering workload.
+                                </p>
+                            </button>
+
+                            <button data-profile="Balanced"
+                                class="perf-profile-card text-left p-4 rounded-md bg-[#242833] border border-[#A5B4FC] transition">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-bold text-[#F3F4F8]">Balanced</span>
+                                    <span
+                                        class="text-[10px] font-mono px-2 py-0.5 rounded bg-[#111318] text-[#A5B4FC] border border-[#A5B4FC]/40">ACTIVE</span>
+                                </div>
+                                <p class="text-xs text-[#A4A9B7] mt-1.5">Practical balance between visual clarity and
+                                    frame pacing. Sets Decreased particles, Fast clouds, and moderate render distances.
+                                </p>
+                            </button>
+
+                            <button data-profile="Quality"
+                                class="perf-profile-card text-left p-4 rounded-md bg-[#1C1F27] hover:bg-[#242833] border border-[#303542] transition">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-bold text-[#F3F4F8]">Quality</span>
+                                    <span
+                                        class="text-[10px] font-mono px-2 py-0.5 rounded bg-[#111318] text-[#55C99A] border border-[#303542]">VISUALS</span>
+                                </div>
+                                <p class="text-xs text-[#A4A9B7] mt-1.5">Restores All particles, Fancy clouds, entity
+                                    shadows, weather precipitation, and higher biome blend radius.</p>
+                            </button>
+                        </div>
+
+                        <!-- Vanilla Settings vs Custom Client Optimizations -->
+                        <div class="flex items-center justify-between pt-2">
+                            <div class="text-xs text-[#A4A9B7]">
+                                Every control below maps to an actual <code
+                                    class="text-[#F3F4F8] font-mono">GameOptions</code> field or documented <code
+                                    class="text-[#A5B4FC] font-mono">WorldRenderer</code> rule. No fabricated FPS
+                                numbers are shown.
+                            </div>
+                            <button id="restore-vanilla-snapshot-btn"
+                                class="px-3 py-1.5 rounded bg-[#1C1F27] hover:bg-[#242833] border border-[#303542] text-xs font-medium text-[#E7B96C] transition shrink-0">
+                                Restore User's Original Settings
+                            </button>
+                        </div>
+
+                        <div id="performance-controls-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <!-- Populated by JS -->
+                        </div>
+                    </section>
+
+                    <!-- ==================== TAB 3: HUD EDITOR ==================== -->
+                    <section id="tab-hud" class="hidden space-y-5">
+                        <div
+                            class="p-4 rounded-md bg-[#1C1F27] border border-[#303542] flex flex-wrap items-center justify-between gap-4">
+                            <div>
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-[#F3F4F8]">Interactive HUD
+                                    Studio</h3>
+                                <p class="text-xs text-[#A4A9B7] mt-0.5">Configure anchors, scale, opacity, or launch
+                                    the full-screen canvas to drag widgets within safe screen bounds.</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button id="tab-hud-reset-all"
+                                    class="px-3 py-1.5 rounded bg-[#111318] hover:bg-[#242833] border border-[#303542] text-xs text-[#EF777F] transition">
+                                    Reset All HUD Positions
+                                </button>
+                                <button id="tab-hud-open-canvas"
+                                    class="px-3.5 py-1.5 rounded bg-[#A5B4FC] text-[#111318] font-semibold text-xs transition">
+                                    Drag & Position on Screen
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="hud-widgets-table" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <!-- Populated by JS -->
+                        </div>
+                    </section>
+
+                    <!-- ==================== TAB 4: MODULES ==================== -->
+                    <section id="tab-modules" class="hidden space-y-4">
+                        <!-- Search and Category Filter -->
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div class="relative flex-1 min-w-[220px]">
+                                <i
+                                    class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[#A4A9B7] text-xs"></i>
+                                <input id="module-search-input" type="text"
+                                    placeholder="Search legitimate client modules..."
+                                    class="w-full pl-8 pr-3 py-1.5 rounded bg-[#1C1F27] border border-[#303542] text-xs text-[#F3F4F8] placeholder-[#A4A9B7] focus:outline-none focus:border-[#A5B4FC]">
+                            </div>
+                            <div class="flex items-center gap-1.5" id="module-category-pills">
+                                <button data-cat="ALL"
+                                    class="cat-pill px-2.5 py-1 rounded text-xs font-medium bg-[#242833] text-[#F3F4F8] border border-[#A5B4FC]">All</button>
+                                <button data-cat="HUD"
+                                    class="cat-pill px-2.5 py-1 rounded text-xs font-medium bg-[#1C1F27] text-[#A4A9B7] border border-[#303542]">HUD</button>
+                                <button data-cat="PERFORMANCE"
+                                    class="cat-pill px-2.5 py-1 rounded text-xs font-medium bg-[#1C1F27] text-[#A4A9B7] border border-[#303542]">Performance</button>
+                                <button data-cat="VISUAL"
+                                    class="cat-pill px-2.5 py-1 rounded text-xs font-medium bg-[#1C1F27] text-[#A4A9B7] border border-[#303542]">Visual</button>
+                                <button data-cat="UTILITY"
+                                    class="cat-pill px-2.5 py-1 rounded text-xs font-medium bg-[#1C1F27] text-[#A4A9B7] border border-[#303542]">Utility</button>
+                            </div>
+                        </div>
+
+                        <div id="modules-list-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                            <!-- Populated by JS -->
+                        </div>
+                    </section>
+
+                    <!-- ==================== TAB 5: SETTINGS & CONFIG ==================== -->
+                    <section id="tab-settings" class="hidden space-y-5">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Keybind & GUI Scale Simulation -->
+                            <div class="p-4 rounded-md bg-[#1C1F27] border border-[#303542] space-y-4">
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-[#F3F4F8]">Input & Display
+                                    Compatibility</h3>
+
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-xs font-medium text-[#F3F4F8]">Click GUI Open Keybind</div>
+                                        <div class="text-[11px] text-[#A4A9B7]">Default: Right Shift (avoids vanilla
+                                            conflicts)</div>
+                                    </div>
+                                    <button id="rebind-gui-key-btn"
+                                        class="px-3 py-1.5 rounded bg-[#242833] hover:border-[#A5B4FC] border border-[#303542] font-mono text-xs text-[#A5B4FC] transition">
+                                        RightShift
+                                    </button>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-xs font-medium text-[#F3F4F8]">CPS Counting Window</div>
+                                        <div class="text-[11px] text-[#A4A9B7]">Rolling timestamp window for real clicks
+                                        </div>
+                                    </div>
+                                    <select id="cps-window-select"
+                                        class="bg-[#111318] border border-[#303542] rounded px-2.5 py-1 text-xs font-mono text-[#F3F4F8]">
+                                        <option value="1000">1.0 Second</option>
+                                        <option value="2000">0.5 Seconds</option>
+                                    </select>
+                                </div>
+
+                                <div class="pt-2 border-t border-[#303542] flex items-center justify-between">
+                                    <div>
+                                        <div class="text-xs font-medium text-[#F3F4F8]">Reset All Client Settings</div>
+                                        <div class="text-[11px] text-[#A4A9B7]">Restores defaults and saves cleanly
+                                        </div>
+                                    </div>
+                                    <button id="factory-reset-all-btn"
+                                        class="px-3 py-1.5 rounded bg-[#111318] hover:bg-[#242833] border border-[#EF777F]/50 text-xs font-medium text-[#EF777F] transition">
+                                        Factory Reset
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Live Versioned JSON Config Inspector (Step 7) -->
+                            <div
+                                class="p-4 rounded-md bg-[#1C1F27] border border-[#303542] flex flex-col justify-between space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="text-xs font-bold uppercase tracking-wider text-[#F3F4F8]">Persistent
+                                            Config (`config/rawcraft/client.json`)</h3>
+                                        <p class="text-[11px] text-[#A4A9B7]">Schema v1 • Validated on load • Zero auth
+                                            tokens stored</p>
+                                    </div>
+                                    <button id="test-corrupt-recovery-btn"
+                                        class="px-2.5 py-1 rounded bg-[#242833] border border-[#303542] text-[11px] text-[#E7B96C] hover:border-[#E7B96C] transition"
+                                        title="Simulate invalid config recovery">
+                                        Test Corrupt Config Recovery
+                                    </button>
+                                </div>
+                                <pre id="config-json-preview"
+                                    class="p-3 rounded bg-[#111318] border border-[#303542] text-[11px] font-mono text-[#A4A9B7] overflow-x-auto max-h-48"></pre>
+                            </div>
+                        </div>
+                    </section>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'rawcraft_client_config_v1';
+
+        // Default Vanilla Options Snapshot (So user can always restore original game settings)
+        const vanillaSnapshot = {
+            particles: 'ALL',
+            clouds: 'FANCY',
+            entityShadows: true,
+            biomeBlendRadius: 5,
+            viewDistance: 12,
+            simulationDistance: 12,
+            weatherPrecipitation: true
+        };
+
+        function getDefaultConfig() {
+            return {
+                schemaVersion: 1,
+                guiKeybind: 'ShiftRight',
+                cpsWindowMs: 1000,
+                performanceProfile: 'Balanced',
+                graphics: {
+                    particles: { label: 'Particle Density', value: 'DECREASED', type: 'enum', choices: ['ALL', 'DECREASED', 'MINIMAL'], source: 'Vanilla GameOptions' },
+                    clouds: { label: 'Cloud Rendering', value: 'FAST', type: 'enum', choices: ['OFF', 'FAST', 'FANCY'], source: 'Vanilla GameOptions' },
+                    entityShadows: { label: 'Entity Shadows', value: false, type: 'boolean', source: 'Vanilla GameOptions' },
+                    weatherPrecipitation: { label: 'Weather Rain/Snow Render', value: true, type: 'boolean', source: 'RawCraft WorldRenderer' },
+                    viewDistance: { label: 'View Distance (Chunks)', value: 10, type: 'range', min: 4, max: 24, source: 'Vanilla GameOptions' },
+                    simulationDistance: { label: 'Simulation Distance', value: 8, type: 'range', min: 5, max: 16, source: 'Vanilla GameOptions' }
+                },
+                widgets: {
+                    fps: { name: 'FPS Counter', enabled: true, anchor: 'TOP_LEFT', offsetX: 16, offsetY: 16, scale: 1.0, opacity: 0.9 },
+                    ping: { name: 'Ping / Latency', enabled: true, anchor: 'TOP_RIGHT', offsetX: 16, offsetY: 16, scale: 1.0, opacity: 0.9 },
+                    coords: { name: 'XYZ Coordinates', enabled: true, anchor: 'TOP_LEFT', offsetX: 16, offsetY: 54, scale: 1.0, opacity: 0.9 },
+                    keystrokes: { name: 'Keystrokes Display', enabled: true, anchor: 'TOP_LEFT', offsetX: 16, offsetY: 118, scale: 1.0, opacity: 0.9 },
+                    cps: { name: 'CPS Counter', enabled: true, anchor: 'TOP_LEFT', offsetX: 16, offsetY: 262, scale: 1.0, opacity: 0.9 },
+                    potions: { name: 'Active Potion Effects', enabled: true, anchor: 'BOTTOM_LEFT', offsetX: 16, offsetY: 24, scale: 1.0, opacity: 0.9 },
+                    armor: { name: 'Armor Durability', enabled: true, anchor: 'BOTTOM_RIGHT', offsetX: 16, offsetY: 24, scale: 1.0, opacity: 0.9 },
+                    crosshair: { name: 'Custom Crosshair', enabled: true, anchor: 'CENTER', offsetX: 0, offsetY: 0, scale: 1.0, opacity: 0.95, style: 'CROSS', color: '#F3F4F8' }
+                },
+                modules: [
+                    {
+                        id: 'fullbright',
+                        name: 'Fullbright',
+                        category: 'VISUAL',
+                        desc: 'Increases client lightmap gamma for dark caverns and restores original gamma on disable.',
+                        enabled: true,
+                        settings: {
+                            gammaStrength: { label: 'Gamma Multiplier', type: 'range', value: 10, min: 1, max: 15 }
+                        }
+                    },
+                    {
+                        id: 'togglesprint',
+                        name: 'ToggleSprint',
+                        category: 'UTILITY',
+                        desc: 'Maintains legitimate client sprint key state without modifying movement packets.',
+                        enabled: true,
+                        settings: {
+                            flyBoostIndicator: { label: 'Show State Label', type: 'boolean', value: true }
+                        }
+                    },
+                    {
+                        id: 'armor_hud_mod',
+                        name: 'Armor Status Format',
+                        category: 'HUD',
+                        desc: 'Reads equipped item damage and gracefully handles non-damageable items (e.g., Totem/Apples).',
+                        enabled: true,
+                        settings: {
+                            format: { label: 'Durability Display', type: 'enum', value: 'BOTH', choices: ['PERCENT', 'RAW', 'BOTH'] },
+                            includeOffhand: { label: 'Show Offhand Non-Durability Item', type: 'boolean', value: true }
+                        }
+                    },
+                    {
+                        id: 'crosshair_mod',
+                        name: 'Crosshair Customization',
+                        category: 'HUD',
+                        desc: 'Renders a crisp native reticle via DrawContext and cleanly cancels vanilla crosshair.',
+                        enabled: true,
+                        settings: {
+                            shape: { label: 'Reticle Shape', type: 'enum', value: 'CROSS', choices: ['CROSS', 'DOT', 'RING'] },
+                            accentColor: { label: 'Use RawCraft Accent (#A5B4FC)', type: 'boolean', value: false }
+                        }
+                    }
+                ]
+            };
+        }
+
+        // Load & Validate Configuration (Step 7)
+        function loadValidatedConfig() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return getDefaultConfig();
+                const parsed = JSON.parse(raw);
+                if (!parsed || typeof parsed !== 'object' || parsed.schemaVersion !== 1 || !parsed.widgets || !parsed.graphics) {
+                    console.warn('[RawCraft Config] Invalid or outdated schema detected. Recovering with safe defaults.');
+                    return getDefaultConfig();
+                }
+                return parsed;
+            } catch (err) {
+                console.warn('[RawCraft Config] Corrupt JSON recovered safely:', err);
+                return getDefaultConfig();
+            }
+        }
+
+        let config = loadValidatedConfig();
+        let guiOpen = true;
+        let hudEditMode = false;
+        let selectedWidgetId = 'fps';
+        let activeCategoryFilter = 'ALL';
+        let listeningForKeybind = false;
+
+        // Simulated Equipment including an item WITHOUT durability (Golden Apples) per Step 5 requirement
+        const equipmentSlots = [
+            { id: 'helmet', name: 'Netherite Helmet', cur: 389, max: 407, hasDurability: true },
+            { id: 'chest', name: 'Netherite Chestplate', cur: 562, max: 592, hasDurability: true },
+            { id: 'legs', name: 'Netherite Leggings', cur: 310, max: 555, hasDurability: true },
+            { id: 'boots', name: 'Netherite Boots', cur: 112, max: 481, hasDurability: true },
+            { id: 'offhand', name: 'Golden Apple x14', cur: 0, max: 0, hasDurability: false }
+        ];
+
+        function saveConfig() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+                const preview = document.getElementById('config-json-preview');
+                if (preview) {
+                    preview.textContent = JSON.stringify(config, null, 2);
+                }
+            } catch (e) {
+                console.error('Failed to persist config:', e);
+            }
+        }
+
+        // Anchor & Screen Bounds Clamping (Step 5)
+        function applyWidgetTransformAndClamp(widgetKey) {
+            const wCfg = config.widgets[widgetKey];
+            if (!wCfg) return;
+            if (widgetKey === 'crosshair') {
+                renderCrosshair();
+                return;
+            }
+            const el = document.getElementById(`widget-${widgetKey}`);
+            if (!el) return;
+
+            el.classList.toggle('hidden', !wCfg.enabled);
+            if (!wCfg.enabled) return;
+
+            el.style.opacity = wCfg.opacity;
+            el.style.transform = `scale(${wCfg.scale})`;
+
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const rect = el.getBoundingClientRect();
+            const width = rect.width || 140;
+            const height = rect.height || 40;
+
+            let left = 16;
+            let top = 16;
+
+            if (wCfg.anchor === 'TOP_LEFT') {
+                left = wCfg.offsetX;
+                top = wCfg.offsetY;
+            } else if (wCfg.anchor === 'TOP_RIGHT') {
+                left = vw - width - wCfg.offsetX;
+                top = wCfg.offsetY;
+            } else if (wCfg.anchor === 'BOTTOM_LEFT') {
+                left = wCfg.offsetX;
+                top = vh - height - wCfg.offsetY;
+            } else if (wCfg.anchor === 'BOTTOM_RIGHT') {
+                left = vw - width - wCfg.offsetX;
+                top = vh - height - wCfg.offsetY;
+            } else if (wCfg.anchor === 'CENTER') {
+                left = (vw / 2) - (width / 2) + wCfg.offsetX;
+                top = (vh / 2) - (height / 2) + wCfg.offsetY;
+            }
+
+            // Clamp inside usable screen bounds (8px margin)
+            left = Math.max(8, Math.min(vw - width - 8, left));
+            top = Math.max(8, Math.min(vh - height - 8, top));
+
+            el.style.left = `${Math.round(left)}px`;
+            el.style.top = `${Math.round(top)}px`;
+        }
+
+        function renderArmorWidget() {
+            const container = document.getElementById('armor-list-container');
+            const armorMod = config.modules.find(m => m.id === 'armor_hud_mod');
+            const fmt = armorMod ? armorMod.settings.format.value : 'BOTH';
+            const showOffhand = armorMod ? armorMod.settings.includeOffhand.value : true;
+
+            document.getElementById('armor-mode-label').textContent = fmt;
+            container.innerHTML = '';
+
+            equipmentSlots.forEach(slot => {
+                if (!slot.hasDurability && !showOffhand) return;
+
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between gap-3 text-xs font-mono';
+
+                if (!slot.hasDurability) {
+                    // Graceful handling for items without durability
+                    row.innerHTML = `
+                        <span class="text-[#A4A9B7] font-sans">${slot.name}</span>
+                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#1C1F27] text-[#A4A9B7] border border-[#303542]">NO DURABILITY</span>
+                    `;
+                } else {
+                    const pct = Math.max(0, Math.round((slot.cur / slot.max) * 100));
+                    let color = '#55C99A';
+                    if (pct <= 25) color = '#EF777F';
+                    else if (pct <= 55) color = '#E7B96C';
+
+                    let readout = `${pct}%`;
+                    if (fmt === 'RAW') readout = `${slot.cur}/${slot.max}`;
+                    if (fmt === 'BOTH') readout = `${slot.cur} (${pct}%)`;
+
+                    row.innerHTML = `
+                        <span class="text-[#F3F4F8] font-sans text-[11px]">${slot.name.replace('Netherite ', '')}</span>
+                        <span style="color: ${color}" class="font-semibold text-[11px]">${readout}</span>
+                    `;
+                }
+                container.appendChild(row);
+            });
+        }
+
+        function renderCrosshair() {
+            const chWidget = config.widgets.crosshair;
+            const chMod = config.modules.find(m => m.id === 'crosshair_mod');
+            const wrap = document.getElementById('hud-crosshair');
+            const svg = document.getElementById('crosshair-svg');
+
+            const isEnabled = chWidget.enabled && (!chMod || chMod.enabled);
+            wrap.classList.toggle('hidden', !isEnabled);
+            if (!isEnabled) return;
+
+            const shape = chMod ? chMod.settings.shape.value : 'CROSS';
+            const color = (chMod && chMod.settings.accentColor.value) ? '#A5B4FC' : '#F3F4F8';
+
+            svg.style.transform = `scale(${chWidget.scale})`;
+            svg.style.opacity = chWidget.opacity;
+
+            if (shape === 'CROSS') {
+                svg.innerHTML = `<path d="M12 6V18M6 12H18" stroke="${color}" stroke-width="1.8" stroke-linecap="square"/>`;
+            } else if (shape === 'DOT') {
+                svg.innerHTML = `<circle cx="12" cy="12" r="2.5" fill="${color}"/>`;
+            } else {
+                svg.innerHTML = `<circle cx="12" cy="12" r="5.5" stroke="${color}" stroke-width="1.6" fill="none"/><circle cx="12" cy="12" r="1.2" fill="${color}"/>`;
+            }
+        }
+
+        function syncAllHudWidgets() {
+            Object.keys(config.widgets).forEach(k => applyWidgetTransformAndClamp(k));
+            renderArmorWidget();
+            renderCrosshair();
+
+            const activeCount = Object.values(config.widgets).filter(w => w.enabled).length;
+            document.getElementById('home-active-widgets-count').textContent = `${activeCount} / 8`;
+            document.getElementById('home-active-profile').textContent = config.performanceProfile;
+            document.getElementById('sidebar-active-profile').textContent = config.performanceProfile;
+            document.getElementById('home-keybind-readout').textContent = config.guiKeybind;
+            document.getElementById('top-keybind-badge').textContent = config.guiKeybind.toUpperCase();
+            document.getElementById('rebind-gui-key-btn').textContent = config.guiKeybind;
+            saveConfig();
+        }
+
+        // Performance Center Rendering (Step 4)
+        function renderPerformanceTab() {
+            document.querySelectorAll('.perf-profile-card').forEach(btn => {
+                const isSelected = btn.dataset.profile === config.performanceProfile;
+                btn.className = `perf-profile-card text-left p-4 rounded-md transition border ${isSelected ? 'bg-[#242833] border-[#A5B4FC]' : 'bg-[#1C1F27] hover:bg-[#242833] border-[#303542]'
+                    }`;
+            });
+
+            const grid = document.getElementById('performance-controls-grid');
+            grid.innerHTML = '';
+
+            Object.keys(config.graphics).forEach(key => {
+                const item = config.graphics[key];
+                const card = document.createElement('div');
+                card.className = 'p-3.5 rounded-md bg-[#1C1F27] border border-[#303542] flex items-center justify-between gap-4';
+
+                let controlHtml = '';
+                if (item.type === 'boolean') {
+                    controlHtml = `
+                        <button data-gfx-bool="${key}" class="px-3 py-1 rounded text-xs font-mono font-semibold border transition ${item.value
+                            ? 'bg-[#242833] text-[#55C99A] border-[#55C99A]/40'
+                            : 'bg-[#111318] text-[#A4A9B7] border-[#303542]'
+                        }">${item.value ? 'ON' : 'OFF'}</button>
+                    `;
+                } else if (item.type === 'enum') {
+                    const opts = item.choices.map(c => `<option value="${c}" ${item.value === c ? 'selected' : ''}>${c}</option>`).join('');
+                    controlHtml = `
+                        <select data-gfx-enum="${key}" class="bg-[#111318] border border-[#303542] rounded px-2.5 py-1 text-xs font-mono text-[#F3F4F8] focus:border-[#A5B4FC] focus:outline-none">
+                            ${opts}
+                        </select>
+                    `;
+                } else if (item.type === 'range') {
+                    controlHtml = `
+                        <div class="flex items-center gap-2">
+                            <input data-gfx-range="${key}" type="range" min="${item.min}" max="${item.max}" value="${item.value}" class="w-24">
+                            <span class="font-mono text-xs text-[#F3F4F8] w-7 text-right">${item.value}</span>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div>
+                        <div class="text-xs font-semibold text-[#F3F4F8]">${item.label}</div>
+                        <div class="text-[10px] font-mono text-[#A4A9B7] mt-0.5">${item.source}</div>
+                    </div>
+                    ${controlHtml}
+                `;
+                grid.appendChild(card);
+            });
+
+            grid.querySelectorAll('[data-gfx-bool]').forEach(b => {
+                b.addEventListener('click', () => {
+                    const k = b.dataset.gfxBool;
+                    config.graphics[k].value = !config.graphics[k].value;
+                    renderPerformanceTab();
+                    saveConfig();
+                });
+            });
+            grid.querySelectorAll('[data-gfx-enum]').forEach(s => {
+                s.addEventListener('change', (e) => {
+                    const k = s.dataset.gfxEnum;
+                    config.graphics[k].value = e.target.value;
+                    saveConfig();
+                });
+            });
+            grid.querySelectorAll('[data-gfx-range]').forEach(r => {
+                r.addEventListener('input', (e) => {
+                    const k = r.dataset.gfxRange;
+                    config.graphics[k].value = parseInt(e.target.value, 10);
+                    renderPerformanceTab();
+                    saveConfig();
+                });
+            });
+        }
+
+        function applyPerformanceProfile(profileName) {
+            config.performanceProfile = profileName;
+            if (profileName === 'Low') {
+                config.graphics.particles.value = 'MINIMAL';
+                config.graphics.clouds.value = 'OFF';
+                config.graphics.entityShadows.value = false;
+                config.graphics.weatherPrecipitation.value = false;
+                config.graphics.viewDistance.value = 6;
+                config.graphics.simulationDistance.value = 5;
+            } else if (profileName === 'Balanced') {
+                config.graphics.particles.value = 'DECREASED';
+                config.graphics.clouds.value = 'FAST';
+                config.graphics.entityShadows.value = false;
+                config.graphics.weatherPrecipitation.value = true;
+                config.graphics.viewDistance.value = 10;
+                config.graphics.simulationDistance.value = 8;
+            } else if (profileName === 'Quality') {
+                config.graphics.particles.value = 'ALL';
+                config.graphics.clouds.value = 'FANCY';
+                config.graphics.entityShadows.value = true;
+                config.graphics.weatherPrecipitation.value = true;
+                config.graphics.viewDistance.value = 16;
+                config.graphics.simulationDistance.value = 12;
+            }
+            renderPerformanceTab();
+            syncAllHudWidgets();
+        }
+
+        // HUD Editor Tab Rendering
+        function renderHudEditorTab() {
+            const container = document.getElementById('hud-widgets-table');
+            container.innerHTML = '';
+
+            Object.keys(config.widgets).forEach(key => {
+                const w = config.widgets[key];
+                const card = document.createElement('div');
+                card.className = 'p-3.5 rounded-md bg-[#1C1F27] border border-[#303542] flex flex-col justify-between gap-3';
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-xs font-bold text-[#F3F4F8]">${w.name}</div>
+                            <div class="text-[11px] font-mono text-[#A4A9B7]">Anchor: ${w.anchor} (${w.offsetX}, ${w.offsetY})</div>
+                        </div>
+                        <button data-hud-toggle="${key}" class="px-2.5 py-1 rounded text-[11px] font-mono font-semibold border transition ${w.enabled
+                        ? 'bg-[#242833] text-[#55C99A] border-[#55C99A]/40'
+                        : 'bg-[#111318] text-[#A4A9B7] border-[#303542]'
+                    }">${w.enabled ? 'ENABLED' : 'DISABLED'}</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 pt-2 border-t border-[#303542] text-[11px]">
+                        <div>
+                            <span class="text-[#A4A9B7] block mb-1">Scale (${w.scale.toFixed(2)}x)</span>
+                            <input data-hud-scale="${key}" type="range" min="75" max="135" value="${Math.round(w.scale * 100)}" class="w-full">
+                        </div>
+                        <div>
+                            <span class="text-[#A4A9B7] block mb-1">Opacity (${Math.round(w.opacity * 100)}%)</span>
+                            <input data-hud-opacity="${key}" type="range" min="35" max="100" value="${Math.round(w.opacity * 100)}" class="w-full">
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            container.querySelectorAll('[data-hud-toggle]').forEach(b => {
+                b.addEventListener('click', () => {
+                    const k = b.dataset.hudToggle;
+                    config.widgets[k].enabled = !config.widgets[k].enabled;
+                    renderHudEditorTab();
+                    syncAllHudWidgets();
+                });
+            });
+            container.querySelectorAll('[data-hud-scale]').forEach(r => {
+                r.addEventListener('input', (e) => {
+                    const k = r.dataset.hudScale;
+                    config.widgets[k].scale = parseInt(e.target.value, 10) / 100;
+                    renderHudEditorTab();
+                    syncAllHudWidgets();
+                });
+            });
+            container.querySelectorAll('[data-hud-opacity]').forEach(r => {
+                r.addEventListener('input', (e) => {
+                    const k = r.dataset.hudOpacity;
+                    config.widgets[k].opacity = parseInt(e.target.value, 10) / 100;
+                    renderHudEditorTab();
+                    syncAllHudWidgets();
+                });
+            });
+        }
+
+        // Modules Tab Rendering (Step 6)
+        function renderModulesTab() {
+            const q = document.getElementById('module-search-input').value.toLowerCase().trim();
+            const grid = document.getElementById('modules-list-grid');
+            grid.innerHTML = '';
+
+            config.modules.forEach(mod => {
+                if (activeCategoryFilter !== 'ALL' && mod.category !== activeCategoryFilter) return;
+                if (q && !mod.name.toLowerCase().includes(q) && !mod.desc.toLowerCase().includes(q)) return;
+
+                const card = document.createElement('div');
+                card.className = 'p-4 rounded-md bg-[#1C1F27] border border-[#303542] flex flex-col justify-between gap-3';
+
+                let settingsHtml = '';
+                Object.keys(mod.settings).forEach(sKey => {
+                    const st = mod.settings[sKey];
+                    if (st.type === 'boolean') {
+                        settingsHtml += `
+                            <div class="flex items-center justify-between text-xs pt-2 border-t border-[#303542]">
+                                <span class="text-[#A4A9B7]">${st.label}</span>
+                                <input data-mod-setting="${mod.id}:${sKey}" type="checkbox" ${st.value ? 'checked' : ''} class="accent-[#A5B4FC]">
+                            </div>
+                        `;
+                    } else if (st.type === 'enum') {
+                        const opts = st.choices.map(c => `<option value="${c}" ${st.value === c ? 'selected' : ''}>${c}</option>`).join('');
+                        settingsHtml += `
+                            <div class="flex items-center justify-between text-xs pt-2 border-t border-[#303542]">
+                                <span class="text-[#A4A9B7]">${st.label}</span>
+                                <select data-mod-setting="${mod.id}:${sKey}" class="bg-[#111318] border border-[#303542] rounded px-2 py-0.5 font-mono text-[11px] text-[#F3F4F8]">${opts}</select>
+                            </div>
+                        `;
+                    } else if (st.type === 'range') {
+                        settingsHtml += `
+                            <div class="flex items-center justify-between text-xs pt-2 border-t border-[#303542]">
+                                <span class="text-[#A4A9B7]">${st.label}: <strong class="text-[#F3F4F8] font-mono">${st.value}</strong></span>
+                                <input data-mod-setting="${mod.id}:${sKey}" type="range" min="${st.min}" max="${st.max}" value="${st.value}" class="w-24">
+                            </div>
+                        `;
+                    }
+                });
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-[#F3F4F8]">${mod.name}</span>
+                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#111318] text-[#A5B4FC] border border-[#303542]">${mod.category}</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <button data-mod-reset="${mod.id}" class="px-2 py-1 rounded bg-[#111318] hover:bg-[#242833] text-[10px] text-[#A4A9B7] border border-[#303542]" title="Reset single module">Reset</button>
+                                <button data-mod-toggle="${mod.id}" class="px-2.5 py-1 rounded text-[11px] font-mono font-semibold border transition ${mod.enabled
+                        ? 'bg-[#242833] text-[#55C99A] border-[#55C99A]/40'
+                        : 'bg-[#111318] text-[#A4A9B7] border-[#303542]'
+                    }">${mod.enabled ? 'ENABLED' : 'DISABLED'}</button>
+                            </div>
+                        </div>
+                        <p class="text-xs text-[#A4A9B7] mt-1.5 leading-relaxed">${mod.desc}</p>
+                    </div>
+                    <div class="space-y-2">${settingsHtml}</div>
+                `;
+                grid.appendChild(card);
+            });
+
+            grid.querySelectorAll('[data-mod-toggle]').forEach(b => {
+                b.addEventListener('click', () => {
+                    const mod = config.modules.find(m => m.id === b.dataset.modToggle);
+                    if (mod) {
+                        mod.enabled = !mod.enabled;
+                        renderModulesTab();
+                        syncAllHudWidgets();
+                    }
+                });
+            });
+
+            grid.querySelectorAll('[data-mod-reset]').forEach(b => {
+                b.addEventListener('click', () => {
+                    const defMod = getDefaultConfig().modules.find(m => m.id === b.dataset.modReset);
+                    const idx = config.modules.findIndex(m => m.id === b.dataset.modReset);
+                    if (defMod && idx !== -1) {
+                        config.modules[idx] = JSON.parse(JSON.stringify(defMod));
+                        renderModulesTab();
+                        syncAllHudWidgets();
+                    }
+                });
+            });
+
+            grid.querySelectorAll('[data-mod-setting]').forEach(el => {
+                el.addEventListener('change', (e) => {
+                    const [modId, sKey] = el.dataset.modSetting.split(':');
+                    const mod = config.modules.find(m => m.id === modId);
+                    if (!mod) return;
+                    const st = mod.settings[sKey];
+                    if (st.type === 'boolean') st.value = e.target.checked;
+                    else if (st.type === 'range') st.value = parseInt(e.target.value, 10);
+                    else st.value = e.target.value;
+                    renderModulesTab();
+                    syncAllHudWidgets();
+                });
+            });
+        }
+
+        // HUD Drag & Drop with Anchor Calculation
+        let draggingEl = null;
+        let dragStartOffsetX = 0;
+        let dragStartOffsetY = 0;
+
+        function selectHudWidgetForInspector(widgetKey) {
+            selectedWidgetId = widgetKey;
+            document.querySelectorAll('.hud-widget').forEach(w => {
+                w.classList.toggle('selected-widget', w.dataset.widget === widgetKey);
+            });
+            const wCfg = config.widgets[widgetKey];
+            if (!wCfg) return;
+            document.getElementById('selected-widget-name').textContent = wCfg.name;
+            document.getElementById('hud-inspector-anchor').value = wCfg.anchor;
+            document.getElementById('hud-inspector-scale').value = Math.round(wCfg.scale * 100);
+            document.getElementById('hud-inspector-scale-val').textContent = `${wCfg.scale.toFixed(2)}x`;
+            document.getElementById('hud-inspector-opacity').value = Math.round(wCfg.opacity * 100);
+            document.getElementById('hud-inspector-opacity-val').textContent = `${Math.round(wCfg.opacity * 100)}%`;
+        }
+
+        document.querySelectorAll('.hud-widget').forEach(widget => {
+            widget.addEventListener('mousedown', (e) => {
+                if (!hudEditMode) return;
+                const key = widget.dataset.widget;
+                selectHudWidgetForInspector(key);
+                draggingEl = widget;
+                const rect = widget.getBoundingClientRect();
+                dragStartOffsetX = e.clientX - rect.left;
+                dragStartOffsetY = e.clientY - rect.top;
+            });
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!draggingEl || !hudEditMode) return;
+            const key = draggingEl.dataset.widget;
+            const wCfg = config.widgets[key];
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const rect = draggingEl.getBoundingClientRect();
+
+            const clampedLeft = Math.max(8, Math.min(vw - rect.width - 8, e.clientX - dragStartOffsetX));
+            const clampedTop = Math.max(8, Math.min(vh - rect.height - 8, e.clientY - dragStartOffsetY));
+
+            // Convert screen position to anchor-relative offset
+            if (wCfg.anchor === 'TOP_LEFT') {
+                wCfg.offsetX = Math.round(clampedLeft);
+                wCfg.offsetY = Math.round(clampedTop);
+            } else if (wCfg.anchor === 'TOP_RIGHT') {
+                wCfg.offsetX = Math.round(vw - rect.width - clampedLeft);
+                wCfg.offsetY = Math.round(clampedTop);
+            } else if (wCfg.anchor === 'BOTTOM_LEFT') {
+                wCfg.offsetX = Math.round(clampedLeft);
+                wCfg.offsetY = Math.round(vh - rect.height - clampedTop);
+            } else if (wCfg.anchor === 'BOTTOM_RIGHT') {
+                wCfg.offsetX = Math.round(vw - rect.width - clampedLeft);
+                wCfg.offsetY = Math.round(vh - rect.height - clampedTop);
+            } else if (wCfg.anchor === 'CENTER') {
+                wCfg.offsetX = Math.round(clampedLeft - (vw / 2 - rect.width / 2));
+                wCfg.offsetY = Math.round(clampedTop - (vh / 2 - rect.height / 2));
+            }
+
+            applyWidgetTransformAndClamp(key);
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (draggingEl) {
+                draggingEl = null;
+                saveConfig();
+                renderHudEditorTab();
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            syncAllHudWidgets();
+        });
+
+        // Real-time CPS & Keystrokes Input Handling
+        const lmbTimestamps = [];
+        const rmbTimestamps = [];
+
+        window.addEventListener('keydown', (e) => {
+            if (listeningForKeybind) {
+                e.preventDefault();
+                config.guiKeybind = e.code;
+                listeningForKeybind = false;
+                syncAllHudWidgets();
+                return;
+            }
+
+            const map = { KeyW: 'key-w', KeyA: 'key-a', KeyS: 'key-s', KeyD: 'key-d', Space: 'key-space' };
+            if (map[e.code]) document.getElementById(map[e.code])?.classList.add('pressed');
+
+            if (e.code === config.guiKeybind && document.activeElement.tagName !== 'INPUT') {
+                e.preventDefault();
+                if (hudEditMode) exitHudStudio();
+                else toggleGui();
+            } else if (e.code === 'Escape' && guiOpen) {
+                toggleGui(false);
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const map = { KeyW: 'key-w', KeyA: 'key-a', KeyS: 'key-s', KeyD: 'key-d', Space: 'key-space' };
+            if (map[e.code]) document.getElementById(map[e.code])?.classList.remove('pressed');
+        });
+
+        window.addEventListener('mousedown', (e) => {
+            const now = performance.now();
+            if (e.button === 0) {
+                document.getElementById('key-lmb')?.classList.add('pressed');
+                lmbTimestamps.push(now);
+            } else if (e.button === 2) {
+                document.getElementById('key-rmb')?.classList.add('pressed');
+                rmbTimestamps.push(now);
+            }
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (e.button === 0) document.getElementById('key-lmb')?.classList.remove('pressed');
+            if (e.button === 2) document.getElementById('key-rmb')?.classList.remove('pressed');
+        });
+
+        window.addEventListener('contextmenu', e => e.preventDefault());
+
+        // Real Browser Frame Timing & Rolling CPS Loop
+        let lastFrameTime = performance.now();
+        let frameCount = 0;
+
+        function telemetryAnimationFrame(now) {
+            frameCount++;
+            if (now - lastFrameTime >= 500) {
+                const realFps = Math.round((frameCount * 1000) / (now - lastFrameTime));
+                const frameMs = (1000 / Math.max(1, realFps)).toFixed(1);
+                document.getElementById('hud-fps-val').textContent = realFps;
+                document.getElementById('hud-frametime-val').textContent = `${frameMs} ms`;
+                frameCount = 0;
+                lastFrameTime = now;
+            }
+
+            const winMs = config.cpsWindowMs || 1000;
+            while (lmbTimestamps.length && now - lmbTimestamps[0] > winMs) lmbTimestamps.shift();
+            while (rmbTimestamps.length && now - rmbTimestamps[0] > winMs) rmbTimestamps.shift();
+
+            const scaleSec = winMs / 1000;
+            document.getElementById('hud-cps-lmb').textContent = Math.round(lmbTimestamps.length / scaleSec);
+            document.getElementById('hud-cps-rmb').textContent = Math.round(rmbTimestamps.length / scaleSec);
+
+            requestAnimationFrame(telemetryAnimationFrame);
+        }
+
+        // UI Navigation & Action Listeners
+        function toggleGui(force) {
+            guiOpen = typeof force === 'boolean' ? force : !guiOpen;
+            document.getElementById('rawcraft-gui-backdrop').classList.toggle('hidden', !guiOpen);
+        }
+
+        function enterHudStudio() {
+            hudEditMode = true;
+            toggleGui(false);
+            document.body.classList.add('hud-edit-active');
+            document.getElementById('hud-editor-toolbar').classList.remove('hidden');
+            selectHudWidgetForInspector(selectedWidgetId);
+        }
+
+        function exitHudStudio() {
+            hudEditMode = false;
+            document.body.classList.remove('hud-edit-active');
+            document.getElementById('hud-editor-toolbar').classList.add('hidden');
+            toggleGui(true);
+        }
+
+        const viewMeta = {
+            home: ['Home & Architecture Overview', 'Phase A audit, live telemetry summary, and quick actions'],
+            performance: ['Performance Center', 'Configure Low, Balanced, or Quality profiles with real GameOptions mapping'],
+            hud: ['HUD Studio', 'Enable, anchor, scale, and position in-game HUD overlays'],
+            modules: ['Client Modules', 'Searchable, legitimate client-side utility and visual modules'],
+            settings: ['Client Settings & Persistent Config', 'Keybindings, CPS counting window, and versioned JSON configuration']
+        };
+
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.nav;
+                document.querySelectorAll('.nav-btn').forEach(b => {
+                    const active = b.dataset.nav === target;
+                    b.className = `nav-btn w-full flex items-center gap-2.5 px-3 py-2 rounded text-xs font-medium transition border ${active
+                        ? 'bg-[#242833] text-[#F3F4F8] border-[#303542]'
+                        : 'text-[#A4A9B7] hover:bg-[#1C1F27] hover:text-[#F3F4F8] border-transparent'
+                        }`;
+                    b.querySelector('i').className = `${b.querySelector('i').className.replace('text-[#A5B4FC]', '')} ${active ? 'text-[#A5B4FC]' : ''}`;
+                });
+
+                ['home', 'performance', 'hud', 'modules', 'settings'].forEach(t => {
+                    document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== target);
+                });
+
+                document.getElementById('view-header-title').textContent = viewMeta[target][0];
+                document.getElementById('view-header-subtitle').textContent = viewMeta[target][1];
+            });
+        });
+
+        // Performance Profile Clicks
+        document.querySelectorAll('.perf-profile-card').forEach(card => {
+            card.addEventListener('click', () => applyPerformanceProfile(card.dataset.profile));
+        });
+
+        // Restore Original Vanilla Snapshot
+        document.getElementById('restore-vanilla-snapshot-btn').addEventListener('click', () => {
+            config.performanceProfile = 'Restored Vanilla';
+            config.graphics.particles.value = vanillaSnapshot.particles;
+            config.graphics.clouds.value = vanillaSnapshot.clouds;
+            config.graphics.entityShadows.value = vanillaSnapshot.entityShadows;
+            config.graphics.weatherPrecipitation.value = vanillaSnapshot.weatherPrecipitation;
+            config.graphics.viewDistance.value = vanillaSnapshot.viewDistance;
+            config.graphics.simulationDistance.value = vanillaSnapshot.simulationDistance;
+            renderPerformanceTab();
+            syncAllHudWidgets();
+        });
+
+        // HUD Inspector Controls
+        document.getElementById('hud-inspector-anchor').addEventListener('change', (e) => {
+            config.widgets[selectedWidgetId].anchor = e.target.value;
+            config.widgets[selectedWidgetId].offsetX = 16;
+            config.widgets[selectedWidgetId].offsetY = 16;
+            syncAllHudWidgets();
+            renderHudEditorTab();
+        });
+
+        document.getElementById('hud-inspector-scale').addEventListener('input', (e) => {
+            const val = parseInt(e.target.value, 10) / 100;
+            config.widgets[selectedWidgetId].scale = val;
+            document.getElementById('hud-inspector-scale-val').textContent = `${val.toFixed(2)}x`;
+            syncAllHudWidgets();
+            renderHudEditorTab();
+        });
+
+        document.getElementById('hud-inspector-opacity').addEventListener('input', (e) => {
+            const val = parseInt(e.target.value, 10) / 100;
+            config.widgets[selectedWidgetId].opacity = val;
+            document.getElementById('hud-inspector-opacity-val').textContent = `${Math.round(val * 100)}%`;
+            syncAllHudWidgets();
+            renderHudEditorTab();
+        });
+
+        document.getElementById('hud-reset-selected-btn').addEventListener('click', () => {
+            const def = getDefaultConfig().widgets[selectedWidgetId];
+            config.widgets[selectedWidgetId] = JSON.parse(JSON.stringify(def));
+            selectHudWidgetForInspector(selectedWidgetId);
+            syncAllHudWidgets();
+            renderHudEditorTab();
+        });
+
+        function resetAllHudWidgets() {
+            config.widgets = JSON.parse(JSON.stringify(getDefaultConfig().widgets));
+            syncAllHudWidgets();
+            renderHudEditorTab();
+            if (hudEditMode) selectHudWidgetForInspector(selectedWidgetId);
+        }
+
+        document.getElementById('hud-reset-all-btn').addEventListener('click', resetAllHudWidgets);
+        document.getElementById('tab-hud-reset-all').addEventListener('click', resetAllHudWidgets);
+
+        document.getElementById('sidebar-launch-hud-studio').addEventListener('click', enterHudStudio);
+        document.getElementById('tab-hud-open-canvas').addEventListener('click', enterHudStudio);
+        document.getElementById('hud-done-editing-btn').addEventListener('click', exitHudStudio);
+
+        // Module Filtering
+        document.getElementById('module-search-input').addEventListener('input', renderModulesTab);
+        document.querySelectorAll('.cat-pill').forEach(pill => {
+            pill.addEventListener('click', () => {
+                activeCategoryFilter = pill.dataset.cat;
+                document.querySelectorAll('.cat-pill').forEach(p => {
+                    const active = p.dataset.cat === activeCategoryFilter;
+                    p.className = `cat-pill px-2.5 py-1 rounded text-xs font-medium border ${active ? 'bg-[#242833] text-[#F3F4F8] border-[#A5B4FC]' : 'bg-[#1C1F27] text-[#A4A9B7] border-[#303542]'
+                        }`;
+                });
+                renderModulesTab();
+            });
+        });
+
+        // Settings Tab Controls
+        document.getElementById('rebind-gui-key-btn').addEventListener('click', (e) => {
+            listeningForKeybind = true;
+            e.target.textContent = 'Press any key...';
+        });
+
+        document.getElementById('cps-window-select').addEventListener('change', (e) => {
+            config.cpsWindowMs = parseInt(e.target.value, 10);
+            document.getElementById('hud-cps-window-tag').textContent = `(${(config.cpsWindowMs / 1000).toFixed(1)}s)`;
+            saveConfig();
+        });
+
+        document.getElementById('factory-reset-all-btn').addEventListener('click', () => {
+            config = getDefaultConfig();
+            renderPerformanceTab();
+            renderHudEditorTab();
+            renderModulesTab();
+            syncAllHudWidgets();
+        });
+
+        document.getElementById('test-corrupt-recovery-btn').addEventListener('click', () => {
+            localStorage.setItem(STORAGE_KEY, '{corrupt_json_schema: true');
+            config = loadValidatedConfig();
+            saveConfig();
+            renderPerformanceTab();
+            renderHudEditorTab();
+            renderModulesTab();
+            syncAllHudWidgets();
+        });
+
+        document.getElementById('top-toggle-gui-btn').addEventListener('click', () => toggleGui());
+        document.getElementById('header-close-gui-btn').addEventListener('click', () => toggleGui(false));
+
+        document.getElementById('simulate-damage-btn').addEventListener('click', () => {
+            equipmentSlots.forEach(s => {
+                if (s.hasDurability) {
+                    s.cur = Math.max(0, s.cur - Math.floor(Math.random() * 35 + 10));
+                    if (s.cur === 0) s.cur = s.max;
+                }
+            });
+            renderArmorWidget();
+        });
+
+        window.onload = function () {
+            renderPerformanceTab();
+            renderHudEditorTab();
+            renderModulesTab();
+            syncAllHudWidgets();
+            requestAnimationFrame(telemetryAnimationFrame);
+        };
+    </script>
+</body>
+
+</html>

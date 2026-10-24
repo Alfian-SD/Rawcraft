@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="rc-sym-small">
+  <title id="rc-sym-small">RawCraft Symbol — Small-Size Optical Cut (16-32px)</title>
+  <!-- Widened optical channels for small screens & favicons -->
+  <polygon fill="currentColor" points="
+    38,80
+    92,49
+    92,207
+    38,176
+  "/>
+  <path fill="currentColor" fill-rule="evenodd" d="
+    M 114 36
+    L 128 28
+    L 218 80
+    L 218 118
+    L 114 118
+    Z
+    M 134 60
+    L 170 60
+    L 186 76
+    L 186 88
+    L 170 104
+    L 134 104
+    Z
+  "/>
+  <polygon fill="currentColor" points="
+    138,138
+    218,138
+    218,176
+    128,228
+    128,174
+    166,138
+  "/>
+</svg>

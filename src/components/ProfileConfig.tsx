@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Profile } from '../types/launcher';
 import { EngineAndFilesTab } from './EngineAndFilesTab';
-import { ModrinthBrowserTab } from './ModrinthBrowserTab';
+import { ModInstallerTab } from './ModInstallerTab';
 
 interface ProfileConfigProps {
   profile: Profile;
@@ -9,7 +9,7 @@ interface ProfileConfigProps {
   isRunning: boolean;
 }
 
-type TabType = 'ENGINE' | 'MODRINTH';
+type TabType = 'ENGINE' | 'STORE';
 
 export const ProfileConfig: React.FC<ProfileConfigProps> = ({
   profile,
@@ -46,10 +46,10 @@ export const ProfileConfig: React.FC<ProfileConfigProps> = ({
         </button>
         <button
           type="button"
-          className={`chip-filter ${activeTab === 'MODRINTH' ? 'active' : ''}`}
-          onClick={() => setActiveTab('MODRINTH')}
+          className={`chip-filter ${activeTab === 'STORE' ? 'active' : ''}`}
+          onClick={() => setActiveTab('STORE')}
         >
-          [TAB B: MODRINTH REPOSITORY]
+          [TAB B: MOD & ADDON STORE]
         </button>
       </div>
 
@@ -61,7 +61,7 @@ export const ProfileConfig: React.FC<ProfileConfigProps> = ({
           isRunning={isRunning}
         />
       ) : (
-        <ModrinthBrowserTab
+        <ModInstallerTab
           profile={profile}
           isRunning={isRunning}
         />

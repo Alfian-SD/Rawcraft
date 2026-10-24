@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RawCraft — A custom Minecraft launcher for Windows</title>
+<meta name="description" content="RawCraft is a custom Minecraft launcher for Windows. A better way to start your Minecraft journey.">
+<meta name="theme-color" content="#242A3B">
+<meta property="og:title" content="RawCraft — Your next adventure starts here.">
+<meta property="og:description" content="A custom Minecraft launcher for Windows.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/variables.css">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav" id="nav">
+  <div class="wrap nav__in">
+    <a class="brand" href="#top" aria-label="RawCraft home"><svg width="28" height="28" viewBox="0 0 8 8" aria-hidden="true"><rect width="8" height="8" rx="1.5" fill="#B7F34A"/><path d="M2 2h4v1H3v1h3v2H2V5h3V4H2z" fill="#242A3B"/></svg>RawCraft</a>
+    <button class="nav__toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu" aria-label="Open menu"><span></span><span></span></button>
+    <nav class="nav__menu" id="navMenu" aria-label="Main">
+      <a href="#features">Features</a><a href="#preview">Preview</a><a href="#download">Download</a>
+      <a class="btn btn--sm" href="#download" data-dl-cta>Download</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+<section class="hero" id="top">
+  <div class="hero__scene" aria-hidden="true">
+    <svg viewBox="0 0 1440 700" preserveAspectRatio="xMidYMax slice" width="1440" height="700">
+      <rect class="sun" x="1090" y="110" width="90" height="90" fill="#FFBD69" data-depth="6"/>
+      <g data-depth="10"><rect x="200" y="140" width="120" height="28" fill="#fff" opacity=".12"/><rect x="236" y="116" width="60" height="24" fill="#fff" opacity=".12"/><rect x="760" y="190" width="140" height="28" fill="#fff" opacity=".1"/></g>
+      <g data-depth="14" fill="#3b4561"><path d="M0 520h140v-60h120v-80h140v60h120v-100h160v80h120v-40h140v100h120v-60h140v80h140v-110h120v90h100v140H0z"/></g>
+      <g data-depth="22" fill="#4f7a4a"><path d="M0 600h180v-50h160v-40h200v60h160v-70h180v50h200v-40h160v60h200v140H0z"/></g>
+      <g data-depth="30"><path fill="#7BC64A" d="M0 650h240v-40h200v30h260v-50h200v40h220v-30h220v100H0z"/><path fill="#8a5a3b" d="M0 700V660h240v-10h200v10h260v-20h200v10h220v-10h220v70z" opacity=".95"/></g>
+      <g data-depth="34"><rect x="1010" y="520" width="26" height="90" fill="#8a5a3b"/><rect x="970" y="450" width="106" height="76" fill="#5fae3d"/><rect x="995" y="420" width="56" height="36" fill="#7BC64A"/></g>
+    </svg>
+  </div>
+  <div class="wrap hero__in">
+    <div class="hero__copy">
+      <p class="eyebrow reveal">YOUR WORLD. YOUR RULES.</p>
+      <h1 class="reveal" style="--d:1">Your next adventure starts here.</h1>
+      <p class="lede reveal" style="--d:2">A better way to start your Minecraft journey. Your world is waiting.</p>
+      <div class="cta-row reveal" style="--d:3">
+        <a class="btn" href="#download" data-dl-cta>Download for Windows</a>
+        <a class="btn btn--ghost" href="#features">Explore features</a>
+      </div>
+      <p class="meta reveal" style="--d:4" id="heroMeta">Windows 10 or 11 · <span data-dl-status>Checking release…</span></p>
+    </div>
+    <div class="hero__ui" aria-hidden="true">
+      <div class="chip chip--a" data-depth="40"><b>Play</b><span>Selected version ready</span></div>
+      <div class="chip chip--b" data-depth="55"><i class="dot"></i>Launcher preview</div>
+      <div class="chip chip--c" data-depth="28">Versions · Settings</div>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec--light" id="preview">
+  <div class="wrap">
+    <div class="sec__head reveal"><h2>See the launcher before you install it</h2><p>This is a demo built for the website. It can’t launch Minecraft or touch your game files.</p></div>
+    <div class="app reveal" role="group" aria-label="RawCraft launcher demo">
+      <div class="app__bar"><span class="app__dots"><i></i><i></i><i></i></span><span class="app__title">RawCraft</span><span class="app__demo">Demo</span></div>
+      <div class="app__body">
+        <div class="app__side" role="tablist" aria-label="Launcher sections" aria-orientation="vertical">
+          <button role="tab" id="t-home" aria-selected="true" aria-controls="p-home">Home</button>
+          <button role="tab" id="t-versions" aria-selected="false" aria-controls="p-versions" tabindex="-1">Versions</button>
+          <button role="tab" id="t-settings" aria-selected="false" aria-controls="p-settings" tabindex="-1">Settings</button>
+        </div>
+        <div class="app__main">
+          <div role="tabpanel" id="p-home" aria-labelledby="t-home">
+            <h3>Welcome back</h3>
+            <div class="sel"><div class="sel__art" aria-hidden="true"></div><div><p class="sel__k">Selected version</p><p class="sel__v">Example 1.21</p><p class="sel__s">Ready to play</p></div></div>
+            <button class="play" type="button" data-demo>Play</button>
+            <p class="note" id="demoNote" role="status" aria-live="polite">Demo only — this button doesn’t launch the game.</p>
+          </div>
+          <div role="tabpanel" id="p-versions" aria-labelledby="t-versions" hidden>
+            <h3>Versions</h3>
+            <ul class="vlist"><li class="on"><span>1.21 &middot; Fabric</span><em>Selected</em></li><li><span>1.20.4 &middot; NeoForge</span><em>Installed</em></li><li><span>1.19.2 &middot; Forge</span><em>Available</em></li></ul>
+            <p class="note">Sample entries. Built-in support for Fabric, Quilt, Forge, and NeoForge.</p>
+          </div>
+          <div role="tabpanel" id="p-settings" aria-labelledby="t-settings" hidden>
+            <h3>Settings</h3>
+            <label class="row"><span>Close launcher when game starts</span><input type="checkbox" checked></label>
+            <label class="row"><span>Check for updates on start</span><input type="checkbox" checked></label>
+            <label class="row"><span>Memory</span><input type="range" min="2" max="16" value="4" aria-label="Memory in gigabytes" id="mem"><output for="mem" id="memOut">4 GB</output></label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec--dark" id="features">
+  <div class="wrap">
+    <div class="sec__head reveal"><h2>Built to get you playing</h2><p>What RawCraft does today, and what’s still on the way.</p></div>
+    <div class="feat">
+      <article class="f f--big reveal"><h3>A launcher that stays out of the way</h3><p>Open it, pick your version, press Play. The interface is clear and quick to learn.</p></article>
+      <article class="f reveal" style="--d:1"><h3>Mods from Modrinth</h3><p>Search, download, and install mods, resource packs, and shaders from Modrinth with one click.</p><div class="pills"><span class="pill">Modrinth</span></div></article>
+      <article class="f f--violet reveal" style="--d:2"><h3>Major mod loaders ready</h3><p>Zero manual file dragging. Instant configuration for your favorite modding ecosystem.</p><div class="pills"><span class="pill">Fabric</span><span class="pill">Quilt</span><span class="pill">Forge</span><span class="pill">NeoForge</span></div></article>
+      <article class="f f--orange reveal" style="--d:3"><h3>Version management</h3><p>Choose which game version and modded profile to launch from one clean list.</p></article>
+      <article class="f reveal" style="--d:4"><h3>Launcher preferences</h3><p>Adjust memory allocation (RAM), java arguments, and window settings in seconds.</p></article>
+      <article class="f reveal" data-status="planned" style="--d:5"><span class="tag">Planned</span><h3>Game library and profiles</h3><p>Keep separate setups for separate worlds.</p></article>
+      <article class="f reveal" data-status="planned" style="--d:6"><span class="tag">Planned</span><h3>Release updates</h3><p>Release notes and automatic update notifications, once published.</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec--light" id="worlds">
+  <div class="wrap">
+    <div class="sec__head reveal"><h2>Every world looks different</h2><p>Original block scenery in the RawCraft style.</p></div>
+    <div class="tabs-s" role="group" aria-label="Choose a scene">
+      <button aria-pressed="true" data-scene="meadow">Meadow</button><button aria-pressed="false" data-scene="desert">Desert</button><button aria-pressed="false" data-scene="night">Night</button>
+    </div>
+    <figure class="world reveal" id="world" data-scene="meadow">
+      <svg viewBox="0 0 800 340" width="800" height="340" role="img" aria-label="Stylized block landscape">
+        <rect class="w-sky" width="800" height="340"/><rect class="w-sun" x="600" y="50" width="60" height="60"/>
+        <path class="w-far" d="M0 240h120v-50h100v40h140v-70h120v60h120v-40h100v60h100v140H0z"/>
+        <path class="w-near" d="M0 290h200v-30h160v20h220v-40h220v50H800v50H0z"/>
+        <g class="w-tree"><rect x="130" y="210" width="16" height="60"/><rect x="96" y="160" width="84" height="56"/></g>
+      </svg>
+      <figcaption id="worldCap">Meadow — a calm place to start.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="sec sec--dark" id="download">
+  <div class="wrap dl">
+    <div>
+      <h2>Download RawCraft</h2>
+      <p class="lede">For Windows 10 and 11.</p>
+      <a class="btn" id="dlBtn" href="#download" data-dl-cta aria-disabled="true">Download for Windows</a>
+      <p class="dl__status" id="dlStatus" role="status" aria-live="polite">Checking release…</p>
+    </div>
+    <dl class="dl__facts">
+      <div><dt>Version</dt><dd id="dlVer">—</dd></div>
+      <div><dt>File size</dt><dd id="dlSize">—</dd></div>
+      <div><dt>Release date</dt><dd id="dlDate">—</dd></div>
+      <div><dt>Checksum (SHA-256)</dt><dd id="dlSum" class="mono">—</dd></div>
+      <div><dt>Requirements</dt><dd id="dlReq">Windows 10 or 11 (64-bit)</dd></div>
+    </dl>
+    <ol class="steps"><li>Download the installer.</li><li>Run it and follow the prompts.</li><li>Open RawCraft and choose a version.</li></ol>
+  </div>
+</section>
+
+<section class="sec sec--light" id="faq">
+  <div class="wrap faq">
+    <div class="sec__head"><h2>Questions</h2></div>
+    <details><summary>What is RawCraft?</summary><p>RawCraft is a custom Minecraft launcher for Windows.</p></details>
+    <details><summary>Does RawCraft support mods and mod loaders?</summary><p>Yes. You can install mods directly from Modrinth, with built-in support for Fabric, Quilt, Forge, and NeoForge.</p></details>
+    <details><summary>Which Windows versions are supported?</summary><p>Windows 10 and 11. Confirm exact support in the release notes once published.</p></details>
+    <details><summary>How do I install it?</summary><p>Download the installer, run it, and follow the prompts.</p></details>
+    <details><summary>What do I need to use it?</summary><p>A Windows PC and a Minecraft license. The launcher doesn’t include the game.</p></details>
+    <details><summary>How do updates work?</summary><p>Update details will be listed with each release.</p></details>
+    <details><summary>Something isn’t working. What now?</summary><p>Re-download the installer and try again. Support links will be added when available.</p></details>
+    <details><summary>Do I need to own Minecraft?</summary><p>Yes. You need your own Minecraft account and license to play.</p></details>
+  </div>
+</section>
+</main>
+
+<footer class="foot"><div class="wrap">
+  <a class="brand" href="#top">RawCraft</a>
+  <nav aria-label="Footer"><a href="#features">Features</a><a href="#preview">Preview</a><a href="#download">Download</a><a href="#faq">FAQ</a></nav>
+  <p>© <span id="yr">2026</span> RawCraft. Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft. Minecraft is a trademark of Mojang Synergies AB.</p>
+</div></footer>
+
+<script src="js/config.js"></script>
+<script src="js/animations.js"></script>
+<script src="js/launcher-preview.js"></script>
+<script src="js/download.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

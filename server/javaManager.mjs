@@ -10,18 +10,34 @@ const PROJECT_ROOT = path.resolve(__dirname, '..');
 const RUNTIMES_DIR = path.join(PROJECT_ROOT, 'runtimes');
 
 export function getRequiredJavaVersion(minecraftVersion = '1.21.4') {
-  const clean = minecraftVersion.trim();
+  const clean = String(minecraftVersion || '').trim();
   const parts = clean.split('.').map((p) => parseInt(p, 10) || 0);
+  const major = parts[0] || 0;
   const minor = parts[1] || 0;
   const patch = parts[2] || 0;
 
-  if (minor > 20 || (minor === 20 && patch >= 5)) {
-    return 21;
+  // Modern year-based releases (25.x, 26.x...)
+  if (major >= 25) {
+    return 25;
   }
-  if (minor >= 18) {
-    return 17;
+  if (major === 1) {
+    if (minor >= 25) return 25;
+    if (minor > 20 || (minor === 20 && patch >= 5)) return 21;
+    if (minor >= 18) return 17;
+    if (minor === 17) return 16;
+    return 8;
   }
-  return 8;
+  return 21;
+}
+
+function getJavaExecutableMajorVersion(exePath) {
+  try {
+    const out = execSync(`"${exePath}" -version`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    const match = out.match(/version\s+"(\d+)/i) || out.match(/"1\.(\d+)/);
+    return match ? parseInt(match[1], 10) : null;
+  } catch {
+    return null;
+  }
 }
 
 function findExecutable(dir, exeName = 'java.exe') {
@@ -65,7 +81,10 @@ export function detectSystemJava(requiredVersion) {
   if (process.env.JAVA_HOME) {
     const javaHomeExe = findExecutable(process.env.JAVA_HOME);
     if (javaHomeExe) {
-      return { path: javaHomeExe, source: 'JAVA_HOME' };
+      const ver = getJavaExecutableMajorVersion(javaHomeExe);
+      if (!ver || ver >= requiredVersion) {
+        return { path: javaHomeExe, source: 'JAVA_HOME' };
+      }
     }
   }
 
@@ -73,9 +92,14 @@ export function detectSystemJava(requiredVersion) {
   try {
     const whereOutput = execSync('where java', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
     if (whereOutput) {
-      const firstLine = whereOutput.split(/\r?\n/)[0].trim();
-      if (fs.existsSync(firstLine)) {
-        return { path: firstLine, source: 'SYSTEM_PATH' };
+      const lines = whereOutput.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      for (const line of lines) {
+        if (fs.existsSync(line)) {
+          const ver = getJavaExecutableMajorVersion(line);
+          if (ver && ver >= requiredVersion) {
+            return { path: line, source: 'SYSTEM_PATH' };
+          }
+        }
       }
     }
   } catch {
@@ -114,8 +138,8 @@ export function detectSystemJava(requiredVersion) {
           const fullSub = path.join(cDir, sub);
           const exe = findExecutable(fullSub);
           if (exe) {
-            // Check if folder hints matching major version
-            if (sub.includes(String(requiredVersion)) || !requiredVersion) {
+            const ver = getJavaExecutableMajorVersion(exe);
+            if (ver && ver >= requiredVersion) {
               return { path: exe, source: 'SYSTEM_FOLDER' };
             }
           }
@@ -195,21 +219,25 @@ export async function downloadPortableJre(requiredVersion, onLog, onProgress) {
 }
 
 export async function resolveJavaPath(customPath, minecraftVersion, onLog, onProgress) {
+  const requiredVersion = getRequiredJavaVersion(minecraftVersion);
+
   // Step A: Custom Path
   if (customPath && customPath.trim() !== 'java' && customPath.trim() !== '') {
     const trimmed = customPath.trim();
     if (fs.existsSync(trimmed)) {
       const stats = fs.statSync(trimmed);
-      if (stats.isDirectory()) {
-        const found = findExecutable(trimmed);
-        if (found) return found;
-      } else {
-        return trimmed;
+      const found = stats.isDirectory() ? findExecutable(trimmed) : trimmed;
+      if (found) {
+        const ver = getJavaExecutableMajorVersion(found);
+        if (!ver || ver >= requiredVersion) {
+          return found;
+        }
+        if (onLog) {
+          onLog(`[RawCraft/WARN]: Custom Java (${found}) is version ${ver}, but Minecraft requires Java ${requiredVersion}. Finding compatible runtime...`);
+        }
       }
     }
   }
-
-  const requiredVersion = getRequiredJavaVersion(minecraftVersion);
 
   // Step B: Scan Local & System Paths
   const detected = detectSystemJava(requiredVersion);

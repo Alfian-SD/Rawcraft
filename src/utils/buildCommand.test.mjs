@@ -41,6 +41,9 @@ assert.strictEqual(validateRam(32768), true, '32768 should be valid');
 assert.strictEqual(validateRam(512), false, '512 should be invalid');
 assert.strictEqual(validateRam(40000), false, '40000 should be invalid');
 assert.strictEqual(validateRam(4096.5), false, 'fractional RAM should be invalid');
+assert.strictEqual(validateRam(undefined), false, 'undefined RAM should be invalid');
+assert.strictEqual(validateRam(null), false, 'null RAM should be invalid');
+assert.strictEqual(validateRam(NaN), false, 'NaN RAM should be invalid');
 
 // Check buildCommand
 const dummyProfile = {

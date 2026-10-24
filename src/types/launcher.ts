@@ -1,4 +1,6 @@
-export type LoaderType = 'VANILLA' | 'FABRIC' | 'NEOFORGE' | 'QUILT' | 'FORGE';
+export type LoaderType = 'RAWCRAFT' | 'VANILLA' | 'FABRIC' | 'NEOFORGE' | 'QUILT' | 'FORGE';
+
+export type ActiveView = 'HERO' | 'PROFILES' | 'CONFIGURE' | 'MODS' | 'STORE' | 'SETTINGS' | 'CONSOLE' | 'LOADER';
 
 export type AuthMode = 'OFFLINE' | 'MICROSOFT';
 
@@ -19,12 +21,15 @@ export interface Profile {
   gameDir: string;
   javaPath?: string;
   mods: ModItem[];
+  lastPlayed?: number;
+  rawcraftClient?: boolean;
 }
 
 export interface GlobalSettings {
   username: string;
   javaPath: string;
   authMode?: AuthMode;
+  animationsEnabled?: boolean;
 }
 
 export interface ProgressData {

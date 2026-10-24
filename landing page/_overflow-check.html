@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>overflow check</title></head>
+<body>
+<pre id="out">running…</pre>
+<script>
+const widths = [320, 390, 480, 640, 768, 880, 980, 1120, 1440];
+const results = [];
+
+function check(w) {
+  return new Promise((resolve) => {
+    const f = document.createElement('iframe');
+    f.style.cssText = `width:${w}px;height:900px;border:0;position:absolute;left:-9999px`;
+    f.src = 'http://localhost:5175/';
+    f.onload = () => {
+      const d = f.contentDocument;
+      const de = d.documentElement;
+      const over = de.scrollWidth - de.clientWidth;
+      const wide = [...d.querySelectorAll('*')]
+        .filter((el) => el.getBoundingClientRect().right > de.clientWidth + 1)
+        .slice(0, 5)
+        .map((el) => el.tagName.toLowerCase() + '.' + (el.className || '').toString().split(' ')[0]);
+      results.push({ w, overflow: over, offenders: wide });
+      f.remove();
+      resolve();
+    };
+    document.body.appendChild(f);
+  });
+}
+
+(async () => {
+  for (const w of widths) await check(w);
+  document.getElementById('out').textContent = JSON.stringify(results, null, 1);
+  document.title = 'done';
+})();
+</script>
+</body></html>

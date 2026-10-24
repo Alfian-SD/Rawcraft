@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title-a">
+  <title id="title-a">RawCraft — Concept A: Chiseled Obsidian R</title>
+  <path fill="currentColor" fill-rule="evenodd" d="
+    M 48 220
+    L 48 64
+    L 84 28
+    L 164 28
+    L 208 72
+    L 208 96
+    L 180 124
+    L 156 136
+    L 208 220
+    L 156 220
+    L 124 152
+    L 92 152
+    L 92 220
+    Z
+    M 92 68
+    L 150 68
+    L 168 86
+    L 168 94
+    L 150 112
+    L 92 112
+    Z
+  "/>
+</svg>

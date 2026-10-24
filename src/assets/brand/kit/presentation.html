@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RawCraft — Brand Identity & Master Logo Kit</title>
+  <style>
+    :root {
+      --bg: #09080E;
+      --card-bg: rgba(20, 19, 29, 0.85);
+      --border: rgba(255, 255, 255, 0.1);
+      --accent: #8C72FF;
+      --accent-light: #B3A1FF;
+      --text: #FFFFFF;
+      --text-muted: #9592A6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 48px 24px 80px 24px;
+      line-height: 1.5;
+    }
+    .container { max-width: 1100px; margin: 0 auto; }
+    header { margin-bottom: 48px; border-bottom: 1px solid var(--border); padding-bottom: 24px; }
+    .badge {
+      display: inline-block;
+      background: rgba(140, 114, 255, 0.15);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    h1 { font-size: 36px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 8px; }
+    .subtitle { color: var(--text-muted); font-size: 15px; }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin: 40px 0 20px 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 24px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+    }
+    .card-title { font-size: 14px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 16px; }
+
+    .stage {
+      background: #000000;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 220px;
+    }
+    .stage.light {
+      background: #F4F4F5;
+      color: #000000;
+    }
+
+    .stage img, .stage svg { max-width: 100%; height: auto; }
+
+    /* Mockups */
+    .mockup-taskbar {
+      background: rgba(15, 14, 22, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-top: 12px;
+    }
+    .mockup-icon-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+    }
+
+    .file-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 12px;
+      font-family: monospace;
+      color: var(--accent-light);
+      text-decoration: none;
+      margin-top: 12px;
+      align-self: flex-start;
+    }
+    .file-pill:hover {
+      background: rgba(140, 114, 255, 0.15);
+      border-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>RawCraft // Master Logo Kit</h1>
+      <p class="subtitle">Official production brand vectors and identity guidelines for the RawCraft desktop Minecraft launcher.</p>
+    </header>
+
+    <!-- SECTION 1: MASTER SYMBOL -->
+    <h2 class="section-title">01 // Master Symbol</h2>
+    <div class="grid-3">
+      <!-- Full Color -->
+      <div class="card">
+        <span class="card-title">Luminous Violet (Primary)</span>
+        <div class="stage">
+          <img src="./rawcraft-symbol-color.svg" width="140" height="140" alt="RawCraft Symbol Color" />
+        </div>
+        <a class="file-pill" href="./rawcraft-symbol-color.svg" download>↓ rawcraft-symbol-color.svg</a>
+      </div>
+
+      <!-- Pure White -->
+      <div class="card">
+        <span class="card-title">Pure White (Reversed)</span>
+        <div class="stage">
+          <img src="./rawcraft-symbol-white.svg" width="140" height="140" alt="RawCraft Symbol White" />
+        </div>
+        <a class="file-pill" href="./rawcraft-symbol-white.svg" download>↓ rawcraft-symbol-white.svg</a>
+      </div>
+
+      <!-- Monochrome Black -->
+      <div class="card">
+        <span class="card-title">Solid Black (Light Base)</span>
+        <div class="stage light">
+          <img src="./rawcraft-symbol-black.svg" width="140" height="140" alt="RawCraft Symbol Black" />
+        </div>
+        <a class="file-pill" href="./rawcraft-symbol-black.svg" download>↓ rawcraft-symbol-black.svg</a>
+      </div>
+    </div>
+
+    <!-- SECTION 2: LOCKUPS -->
+    <h2 class="section-title">02 // Horizontal & Stacked Lockups</h2>
+    <div class="grid-2">
+      <!-- Horizontal Color -->
+      <div class="card">
+        <span class="card-title">Horizontal Lockup (Color)</span>
+        <div class="stage">
+          <img src="./rawcraft-horizontal-color.svg" style="width: 100%; max-height: 80px;" alt="Horizontal Lockup Color" />
+        </div>
+        <a class="file-pill" href="./rawcraft-horizontal-color.svg" download>↓ rawcraft-horizontal-color.svg</a>
+      </div>
+
+      <!-- Horizontal White -->
+      <div class="card">
+        <span class="card-title">Horizontal Lockup (White)</span>
+        <div class="stage">
+          <img src="./rawcraft-horizontal-white.svg" style="width: 100%; max-height: 80px;" alt="Horizontal Lockup White" />
+        </div>
+        <a class="file-pill" href="./rawcraft-horizontal-white.svg" download>↓ rawcraft-horizontal-white.svg</a>
+      </div>
+
+      <!-- Stacked Lockup -->
+      <div class="card">
+        <span class="card-title">Stacked Lockup (Center Stage / Splash)</span>
+        <div class="stage">
+          <img src="./rawcraft-stacked-color.svg" style="max-height: 180px;" alt="Stacked Lockup Color" />
+        </div>
+        <a class="file-pill" href="./rawcraft-stacked-color.svg" download>↓ rawcraft-stacked-color.svg</a>
+      </div>
+
+      <!-- Desktop App Squircle -->
+      <div class="card">
+        <span class="card-title">Desktop App Icon Tile</span>
+        <div class="stage">
+          <img src="./rawcraft-app-icon.svg" style="max-height: 180px;" alt="App Icon Squircle" />
+        </div>
+        <a class="file-pill" href="./rawcraft-app-icon.svg" download>↓ rawcraft-app-icon.svg</a>
+      </div>
+    </div>
+
+    <!-- SECTION 3: OPTICAL SIZES & REAL-WORLD MOCKUPS -->
+    <h2 class="section-title">03 // Optical Scales & Real-World Mockups</h2>
+    <div class="grid-2">
+      <!-- Optical Scales Ladder -->
+      <div class="card">
+        <span class="card-title">Optical Cut Ladder (16px, 24px, 32px, 64px)</span>
+        <div class="stage" style="gap: 24px; align-items: flex-end;">
+          <div style="text-align: center;">
+            <img src="./rawcraft-symbol-color.svg" width="64" height="64" alt="64px" />
+            <div style="font-size: 11px; font-family: monospace; color: var(--text-muted); margin-top: 6px;">64px</div>
+          </div>
+          <div style="text-align: center;">
+            <img src="./rawcraft-symbol-color.svg" width="32" height="32" alt="32px" />
+            <div style="font-size: 11px; font-family: monospace; color: var(--text-muted); margin-top: 6px;">32px</div>
+          </div>
+          <div style="text-align: center;">
+            <img src="./rawcraft-symbol-small.svg" width="24" height="24" alt="24px" />
+            <div style="font-size: 11px; font-family: monospace; color: var(--text-muted); margin-top: 6px;">24px (cut)</div>
+          </div>
+          <div style="text-align: center;">
+            <img src="./rawcraft-symbol-small.svg" width="16" height="16" alt="16px" />
+            <div style="font-size: 11px; font-family: monospace; color: var(--text-muted); margin-top: 6px;">16px (cut)</div>
+          </div>
+        </div>
+        <a class="file-pill" href="./rawcraft-symbol-small.svg" download>↓ rawcraft-symbol-small.svg (Optical Cut)</a>
+      </div>
+
+      <!-- Desktop OS Taskbar Mockup -->
+      <div class="card">
+        <span class="card-title">OS Desktop Dock & Taskbar Context</span>
+        <div class="mockup-taskbar">
+          <div class="mockup-icon-btn">
+            <img src="./rawcraft-symbol-color.svg" width="24" height="24" alt="Taskbar icon" />
+          </div>
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-weight: 700; font-size: 14px;">RawCraft Launcher</span>
+            <span style="font-size: 12px; color: var(--text-muted);">Minecraft 1.21.4 • Fabric 0.16.9 (Active)</span>
+          </div>
+        </div>
+        <div style="margin-top: 16px; font-size: 12px; color: var(--text-muted);">
+          Tested against dark OS taskbars, blurred window headers, and 16px browser tab titles.
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 256" width="880" height="256" role="img" aria-labelledby="title-c-lockup">
+  <title id="title-c-lockup">RawCraft Logo — Concept C Horizontal Lockup</title>
+  <!-- Symbol C (Hex-Voxel R) -->
+  <g transform="translate(16, 0)">
+    <polygon fill="currentColor" points="
+      42,78
+      96,47
+      96,209
+      42,178
+    "/>
+    <path fill="currentColor" fill-rule="evenodd" d="
+      M 112 37
+      L 128 28
+      L 214 78
+      L 214 120
+      L 112 120
+      Z
+      M 136 64
+      L 172 64
+      L 186 78
+      L 186 86
+      L 172 100
+      L 136 100
+      Z
+    "/>
+    <polygon fill="currentColor" points="
+      136,136
+      214,136
+      214,178
+      128,228
+      128,172
+      164,136
+    "/>
+  </g>
+
+  <!-- Wordmark RAWCRAFT -->
+  <g fill="currentColor" transform="translate(280, 0)">
+    <!-- R -->
+    <path d="M 0 176 L 0 80 L 36 80 C 50 80 58 88 58 102 C 58 114 50 122 38 124 L 60 176 L 42 176 L 22 128 L 16 128 L 16 176 Z M 16 94 L 16 114 L 34 114 C 42 114 46 110 46 104 C 46 98 42 94 34 94 Z"/>
+    <!-- A -->
+    <path d="M 94 80 L 114 80 L 138 176 L 121 176 L 115 152 L 92 152 L 86 176 L 70 176 Z M 96 138 L 112 138 L 104 102 Z"/>
+    <!-- W -->
+    <path d="M 144 80 L 160 80 L 173 148 L 186 80 L 199 80 L 212 148 L 225 80 L 241 80 L 221 176 L 204 176 L 193 118 L 181 176 L 164 176 Z"/>
+    <!-- C -->
+    <path d="M 302 96 L 288 107 C 282 99 274 94 263 94 C 248 94 238 107 238 128 C 238 149 248 162 263 162 C 274 162 282 157 288 149 L 302 160 C 293 172 279 178 262 178 C 237 178 221 158 221 128 C 221 98 237 78 262 78 C 279 78 293 84 302 96 Z"/>
+    <!-- R -->
+    <path d="M 314 176 L 314 80 L 350 80 C 364 80 372 88 372 102 C 372 114 364 122 352 124 L 374 176 L 356 176 L 336 128 L 330 128 L 330 176 Z M 330 94 L 330 114 L 348 114 C 356 114 360 110 360 104 C 360 98 356 94 348 94 Z"/>
+    <!-- A -->
+    <path d="M 408 80 L 428 80 L 452 176 L 435 176 L 429 152 L 406 152 L 400 176 L 384 176 Z M 410 138 L 426 138 L 418 102 Z"/>
+    <!-- F -->
+    <path d="M 462 80 L 508 80 L 508 94 L 478 94 L 478 120 L 504 120 L 504 134 L 478 134 L 478 176 L 462 176 Z"/>
+    <!-- T -->
+    <path d="M 514 80 L 564 80 L 564 94 L 547 94 L 547 176 L 531 176 L 531 94 L 514 94 Z"/>
+
+    <!-- Subtitle: MINECRAFT LAUNCHER -->
+    <text x="2" y="208" font-family="'Space Mono', monospace" font-size="16" font-weight="700" letter-spacing="0.2em" opacity="0.6">
+      MINECRAFT LAUNCHER
+    </text>
+  </g>
+</svg>

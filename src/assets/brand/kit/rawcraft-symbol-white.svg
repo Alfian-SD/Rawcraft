@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="rc-sym-white">
+  <title id="rc-sym-white">RawCraft Symbol — White</title>
+  <!-- Left Pillar / Stem of R -->
+  <polygon fill="#FFFFFF" points="42,78 96,47 96,209 42,178"/>
+
+  <!-- Top-Right Bowl of R with Negative Counter Hole -->
+  <path fill="#FFFFFF" fill-rule="evenodd" d="
+    M 112 37
+    L 128 28
+    L 214 78
+    L 214 120
+    L 112 120
+    Z
+    M 136 64
+    L 172 64
+    L 186 78
+    L 186 86
+    L 172 100
+    L 136 100
+    Z
+  "/>
+
+  <!-- Bottom-Right Kinetic Kick Leg -->
+  <polygon fill="#FFFFFF" points="136,136 214,136 214,178 128,228 128,172 164,136"/>
+</svg>

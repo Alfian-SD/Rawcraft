@@ -4,13 +4,12 @@
   "package": "com.rawcraft.client.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "ClientPacketListenerMixin",
     "HudMixin",
-    "KeyboardMixin",
-    "MouseMixin",
-    "WeatherMixin",
-    "LightmapMixin",
-    "KeyboardInputMixin"
+    "KeyboardHandlerMixin",
+    "MinecraftMixin",
+    "MouseHandlerMixin",
+    "PauseScreenMixin",
+    "TitleScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1
