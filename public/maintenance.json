@@ -1,7 +1,7 @@
 ﻿{
   "enabled": false,
   "title": "RawCraft sedang dalam perawatan",
-  "message": "Tab Instal Mod sedang under maintenance. Kami sedang memperbaiki layanan. Coba lagi beberapa saat lagi.",
+  "message": "Kami sedang memperbaiki layanan. Coba lagi beberapa saat lagi.",
   "eta": null,
-  "lockedViews": ["STORE"]
+  "lockedViews": []
 }
