@@ -54,10 +54,12 @@ export const GlassDrawerModal: React.FC<GlassDrawerModalProps> = ({
     }
   };
 
+  // Autofocus the first control only when the panel opens, never on prop identity changes.
+  // `onClose` is an inline arrow upstream, so it must not be a dependency here or every
+  // keystroke would re-run this and steal focus back to the first button.
   useEffect(() => {
     if (activeView === 'HERO') return;
 
-    // Focus first interactive element on open
     const timer = setTimeout(() => {
       const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
         'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -66,6 +68,12 @@ export const GlassDrawerModal: React.FC<GlassDrawerModalProps> = ({
         focusable[0].focus();
       }
     }, 50);
+
+    return () => clearTimeout(timer);
+  }, [activeView]);
+
+  useEffect(() => {
+    if (activeView === 'HERO') return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -99,7 +107,6 @@ export const GlassDrawerModal: React.FC<GlassDrawerModalProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => {
-      clearTimeout(timer);
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [activeView, onClose]);

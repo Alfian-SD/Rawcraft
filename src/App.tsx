@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { LauncherState, Profile, ProgressData, ActiveView, LoaderType } from './types/launcher';
 import { launcherApi } from './services/launcherApi';
 import { LOADERS_CONFIG, getLoaderBySlug } from './config/loaders';
@@ -148,8 +148,11 @@ export default function App() {
     }
   };
 
-  const handleSelectLoader = (loaderId: LoaderType) => {
-    const config = LOADERS_CONFIG.find((l) => l.id === loaderId);
+  const handleCloseDrawer = useCallback(() => {
+    handleNavigateView(activeLoaderId ? 'LOADER' : 'HERO');
+  }, [activeLoaderId]);
+
+  const handleSelectLoader = (loaderId: LoaderType) => {    const config = LOADERS_CONFIG.find((l) => l.id === loaderId);
     setActiveView('LOADER');
     setActiveLoaderId(loaderId);
     if (config) {
@@ -433,7 +436,7 @@ export default function App() {
         {!viewLocked && (
           <GlassDrawerModal
             activeView={activeView}
-            onClose={() => handleNavigateView(activeLoaderId ? 'LOADER' : 'HERO')}
+            onClose={handleCloseDrawer}
             profile={activeProfile}
             profiles={state.profiles}
             activeProfileId={state.activeProfileId}
