@@ -12,6 +12,7 @@ import { installModrinthFile } from '../api/instanceClient';
 import { StoreCategory, StoreItem } from '../api/unifiedStore';
 import { renderMarkdown } from '../utils/markdown';
 import { formatCount, formatBytes, sortGameVersions } from '../utils/storeFormat';
+import { ModIcon } from './ModIcon';
 
 interface ModDetailViewProps {
   item: StoreItem;
@@ -155,9 +156,12 @@ export const ModDetailView: React.FC<ModDetailViewProps> = ({
       </button>
 
       <header className="md-head">
-        <div className="md-icon" aria-hidden="true">
-          {item.title.slice(0, 2).toUpperCase()}
-        </div>
+        <ModIcon
+          src={project?.icon_url ?? item.iconUrl}
+          title={item.title}
+          size={64}
+          className="md-icon"
+        />
 
         <div className="md-head-main">
           <h3 className="md-title">{project?.title || item.title}</h3>

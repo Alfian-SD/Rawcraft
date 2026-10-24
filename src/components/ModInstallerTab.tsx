@@ -9,6 +9,7 @@ import {
 } from '../api/unifiedStore';
 import { fetchMinecraftVersions } from '../api/instanceClient';
 import { ModDetailView } from './ModDetailView';
+import { ModIcon } from './ModIcon';
 
 interface ModInstallerTabProps {
   profile: Profile;
@@ -372,9 +373,7 @@ export const ModInstallerTab: React.FC<ModInstallerTabProps> = ({ profile, isRun
                 style={{ animationDelay: `${Math.min(index, 5) * 80 + 140}ms` }}
                 onClick={() => setDetailItem(item)}
               >
-                <div className={`mi-icon ${srcCls}`} aria-hidden="true">
-                  M
-                </div>
+                <ModIcon src={item.iconUrl} title={item.title} size={46} className={`mi-icon ${srcCls}`} />
 
                 <div className="mi-body">
                   <div className="mi-name-row">

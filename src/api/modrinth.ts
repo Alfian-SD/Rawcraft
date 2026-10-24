@@ -55,6 +55,8 @@ export interface ModrinthProject {
   client_side: string;
   server_side: string;
   project_type: string;
+  icon_url?: string | null;
+  color?: number | null;
 }
 
 export interface ModrinthTeamMember {
@@ -117,6 +119,8 @@ export async function getModrinthProject(idOrSlug: string): Promise<ModrinthProj
     client_side: String(d.client_side || ''),
     server_side: String(d.server_side || ''),
     project_type: String(d.project_type || ''),
+    icon_url: typeof d.icon_url === 'string' ? d.icon_url : null,
+    color: typeof d.color === 'number' ? d.color : null,
   };
 }
 
@@ -206,7 +210,7 @@ export async function searchModrinth(params: {
 
   const data = await response.json();
 
-  // Strip all image URLs per RawBlock Rule #9
+  // Project icon is allowed (AGENTS.md §2); gallery screenshots stay stripped.
   const sanitizedHits: ModrinthSearchResult[] = (data.hits || []).map((hit: Record<string, unknown>) => ({
     project_id: String(hit.project_id || ''),
     project_type: String(hit.project_type || ''),
@@ -223,6 +227,8 @@ export async function searchModrinth(params: {
     latest_version: String(hit.latest_version || ''),
     client_side: String(hit.client_side || ''),
     server_side: String(hit.server_side || ''),
+    icon_url: typeof hit.icon_url === 'string' ? hit.icon_url : null,
+    color: typeof hit.color === 'number' ? hit.color : null,
   }));
 
   return {

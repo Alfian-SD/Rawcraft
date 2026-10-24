@@ -21,6 +21,8 @@ export interface StoreItem {
   categories: string[];
   latestVersion?: string;
   loaderHints: string[];
+  iconUrl?: string | null;
+  color?: number | null;
   raw: {
     modrinthHit: ModrinthSearchResult;
   };
@@ -71,6 +73,8 @@ export async function searchStore(q: StoreSearchQuery): Promise<StoreSearchResul
       loaderHints: h.categories.filter((c) =>
         ['fabric', 'forge', 'neoforge', 'quilt', 'rift'].includes(c.toLowerCase())
       ),
+      iconUrl: h.icon_url ?? null,
+      color: h.color ?? null,
       raw: { modrinthHit: h },
     }));
 

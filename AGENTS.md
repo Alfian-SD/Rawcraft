@@ -14,7 +14,7 @@ Design language: RawCraft authentic voxel & gaming identity — Deep Slate / Sky
 - Tactile 3D Buttons: Buttons have physical gaming depth (`box-shadow: 0 4px 0 #7FB11F`, hover `-2px / 6px`, active `translateY(3px)` with `box-shadow: 0 1px 0 #7FB11F`). Never replace with flat or blurry shadows.
 - `border-radius`: `8px` for badges/controls (`--r-sm`), `14px` for cards/buttons (`--r-md`), `22px` for major containers (`--r-lg`), `999px` for status pills.
 - Typography: `"Trebuchet MS", "Segoe UI", system-ui, sans-serif` for headings and controls (display headings weight 700/800, tight line-height `1.08`, `letter-spacing: -0.025em`). `JetBrains Mono` for numbers, telemetry, and logs.
-- DO NOT render `<img />` tags for Modrinth project icons or gallery screenshots. Rule #9 forbids decorative images and icons — use a `mod-card-icon` text block instead.
+- Mod project icons: Render Modrinth `icon_url` via `<ModIcon />` with initials fallback on error/missing. Gallery screenshots and decorative raster illustrations remain forbidden.
 - Disabled states must use `#3A4260` borders and `#151926` fills with `#727789` text—NEVER CSS `opacity`.
 - Focus outlines use `3px solid #A78BFA` with `2px` offset. No `backdrop-filter` blur.
 
