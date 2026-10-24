@@ -27,7 +27,7 @@ const DEFAULT_FALLBACK_PROFILE: Profile = {
 };
 
 /** Views that render as a right-side drawer over the hero stage. */
-const RIGHT_DRAWER_VIEWS: ActiveView[] = ['CONFIGURE', 'PROFILES', 'SETTINGS', 'CONSOLE', 'MODS'];
+const RIGHT_DRAWER_VIEWS: ActiveView[] = ['PROFILES', 'SETTINGS', 'CONSOLE', 'MODS'];
 
 export default function App() {
   const [state, setState] = useState<LauncherState>(() => launcherApi.getLauncherState());

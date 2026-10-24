@@ -730,13 +730,37 @@ select.input-field option {
   animation: drawerFullIn 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Centered popup variant — used by CONFIGURE */
+.drawer-overlay-center {
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+}
+
+.drawer-dialog-center {
+  width: 600px;
+  max-width: 95vw;
+  max-height: 88vh;
+  height: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  animation: drawerCenterIn 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes drawerCenterIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
 @keyframes drawerFullIn {
   from { opacity: 0; transform: translateY(12px) scale(0.994); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .drawer-dialog-full { animation: none; }
+  .drawer-dialog-full,
+  .drawer-dialog-center { animation: none; }
 }
 
 /* ── Profile cards ──────────────────────────────────────────────────── */
