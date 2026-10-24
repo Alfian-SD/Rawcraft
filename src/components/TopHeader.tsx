@@ -1,22 +1,20 @@
 import React from 'react';
-import { GlobalSettings, ProgressData, Profile } from '../types/launcher';
+import { GlobalSettings } from '../types/launcher';
 
 interface TopHeaderProps {
   settings: GlobalSettings;
-  profile: Profile;
-  isRunning: boolean;
-  progress?: ProgressData | null;
   onOpenSettings: () => void;
   onOpenCommandPalette?: () => void;
+  sidebarOpen: boolean;
+  onToggleSidebar: () => void;
 }
 
 export const TopHeader: React.FC<TopHeaderProps> = ({
   settings,
-  profile,
-  isRunning,
-  progress,
   onOpenSettings,
   onOpenCommandPalette,
+  sidebarOpen,
+  onToggleSidebar,
 }) => {
   const username = settings.username || 'deadbound';
 
@@ -35,57 +33,21 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
         flexShrink: 0,
       }}
     >
-      {/* Left: online count */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Sedang bermain</span>
-        <span className="telemetry-num" style={{ fontSize: '13px', color: 'var(--text)' }}>
-          2.973
-        </span>
-      </div>
-
-      {/* Center: status / download */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          minWidth: '260px',
-          justifyContent: 'center',
-        }}
+      {/* Left: sidebar toggle */}
+      <button
+        type="button"
+        className="btn-icon"
+        onClick={onToggleSidebar}
+        aria-label={sidebarOpen ? 'Sembunyikan bilah samping' : 'Tampilkan bilah samping'}
+        aria-expanded={sidebarOpen}
+        aria-controls="nav-rail"
+        title={sidebarOpen ? 'Sembunyikan bilah samping' : 'Tampilkan bilah samping'}
       >
-        <span className={`status-dot ${isRunning ? 'running' : ''}`} />
-        <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-          {progress && progress.percent > 0 ? (
-            <>
-              Mengunduh <span className="telemetry-num">{progress.percent}%</span>
-            </>
-          ) : isRunning ? (
-            'Klien berjalan'
-          ) : (
-            `Siap · ${profile.name || 'Klasik'}`
-          )}
-        </span>
-        {progress && progress.percent > 0 && (
-          <div
-            style={{
-              width: '80px',
-              height: '3px',
-              borderRadius: '999px',
-              backgroundColor: 'var(--bg-muted)',
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              style={{
-                width: `${progress.percent}%`,
-                height: '100%',
-                backgroundColor: 'var(--accent)',
-                transition: 'width 0.2s ease',
-              }}
-            />
-          </div>
-        )}
-      </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <line x1="9" y1="4" x2="9" y2="20" />
+        </svg>
+      </button>
 
       {/* Right: search, profile, window controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

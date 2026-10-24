@@ -33,10 +33,12 @@ export default function App() {
   const [isRunning, setIsRunning] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [progress, setProgress] = useState<ProgressData | null>(null);
+  // ponytail: progress still tracked from SSE for future HUD, currently unrendered
+  const [, setProgress] = useState<ProgressData | null>(null);
   const [assetsWarning, setAssetsWarning] = useState<string | null>(null);
   const [isRepairing, setIsRepairing] = useState(false);
   const maintenance = useMaintenance();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [logs, setLogs] = useState<string[]>([
     `[${new Date().toLocaleTimeString()}] [RawCraft/Misty]: System initialized. Welcome to Minecraft launcher.`,
   ]);
@@ -327,6 +329,7 @@ export default function App() {
         onSelectLoader={handleSelectLoader}
         isRunning={isRunning}
         lockedViews={maintenance.lockedViews}
+        open={sidebarOpen}
       />
 
       {/* 2. Main Stage with Header, Main Content View, and Bottom Controls */}
@@ -382,11 +385,10 @@ export default function App() {
 
         <TopHeader
           settings={state.globalSettings}
-          profile={activeProfile}
-          isRunning={isRunning}
-          progress={progress}
           onOpenSettings={() => handleNavigateView('SETTINGS')}
           onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen((v) => !v)}
         />
 
         {/* Primary Content Slot: Loader Full Page or Hero Stage */}

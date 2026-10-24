@@ -12,6 +12,8 @@ interface NavigationRailProps {
   isRunning: boolean;
   /** Views currently gated behind maintenance. Shown with a LOCK badge. */
   lockedViews?: ActiveView[];
+  /** Collapse the rail to zero width. Kept mounted so the transition runs. */
+  open?: boolean;
 }
 
 export const NavigationRail: React.FC<NavigationRailProps> = ({
@@ -21,6 +23,7 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
   onSelectLoader,
   isRunning,
   lockedViews = [],
+  open = true,
 }) => {
   const LockBadge: React.FC<{ view: ActiveView }> = ({ view }) =>
     lockedViews.includes(view) ? (
@@ -31,16 +34,24 @@ export const NavigationRail: React.FC<NavigationRailProps> = ({
 
   return (
     <aside
+      id="nav-rail"
+      aria-hidden={!open}
+      inert={!open}
+      className="nav-rail"
       style={{
-        width: '232px',
+        width: open ? '232px' : '0px',
         height: '100%',
         backgroundColor: 'var(--bg-subtle)',
-        borderRight: '1px solid var(--border)',
+        borderRight: open ? '1px solid var(--border)' : 'none',
         display: 'flex',
         flexDirection: 'column',
-        padding: '16px 12px',
+        padding: open ? '16px 12px' : '16px 0',
         zIndex: 20,
         flexShrink: 0,
+        overflow: 'hidden',
+        opacity: open ? 1 : 0,
+        transition:
+          'width var(--dur-base) var(--ease-out-expo), padding var(--dur-base) var(--ease-out-expo), opacity var(--dur-fast) ease, border-color var(--dur-fast) ease',
       }}
     >
       {/* Brand */}

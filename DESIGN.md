@@ -98,11 +98,14 @@ Tactile 3D shelf stays mandatory (see `landing page/DESIGN.md` §2.4). Motion la
 
 | State | Transform | Shadow |
 | :--- | :--- | :--- |
-| Rest | `translateY(0)` | `0 4px 0 #7FB11F` |
-| Hover | `translateY(-2px)` | `0 6px 0 #7FB11F` |
+| Rest | `translateY(0)` | `0 3px 0 #7FB11F` |
+| Hover | `translateY(-2px)` | `0 5px 0 #7FB11F` |
 | Active | `translateY(2px)` | `0 1px 0 #7FB11F` |
 
 > **Guardrail**: Press travel is always *downward* (`translateY` positive) with a *shrinking* shelf. Never scale a button on press without reducing the shelf — it reads as floating, not pressing.
+>
+> **One button system.** Every action button in the launcher uses the two recipes below — no tab invents its own. Primary = acid-lime gradient `180deg #C5F762 → #B7F34A`, `1px solid #D6FA86`, dark `#242A3B` text at weight 800 / `letter-spacing .06em`, `border-radius 10px`, lime shelf + soft glow. Secondary = `rgba(21,25,38,.9)` fill, `1px solid var(--border)`, `var(--text-muted)` at weight 700 / `.04em`, **no shelf**, hover lifts `-2px` and brightens border only. Destructive = secondary geometry with `#EF4444` border/text. Disabled = `#3A4260` border, `#151926` fill, `#727789` text, no shelf, never `opacity`.
+
 
 ---
 
