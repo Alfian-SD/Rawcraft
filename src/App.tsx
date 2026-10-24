@@ -8,6 +8,7 @@ import { TopHeader } from './components/TopHeader';
 import { HeroStage } from './components/HeroStage';
 import { LoaderViewTab } from './components/LoaderViewTab';
 import { GlassDrawerModal } from './components/GlassDrawerModal';
+import { InstanceConfigModal } from './components/InstanceConfigModal';
 import { CommandPalette } from './components/CommandPalette';
 import { MaintenanceScreen } from './components/MaintenanceScreen';
 import { useMaintenance } from './hooks/useMaintenance';
@@ -42,6 +43,9 @@ export default function App() {
   const [isRepairing, setIsRepairing] = useState(false);
   const maintenance = useMaintenance();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  /** Instance id whose config popup is open. Separate from `activeView` so the
+   *  page underneath (Instance tab, hero, loader) stays put. */
+  const [configProfileId, setConfigProfileId] = useState<string | null>(null);
   const [logs, setLogs] = useState<string[]>([
     `[${new Date().toLocaleTimeString()}] [RawCraft/Misty]: System initialized. Welcome to Minecraft launcher.`,
   ]);
@@ -58,6 +62,10 @@ export default function App() {
 
   const currentLoaderConfig = activeLoaderId
     ? LOADERS_CONFIG.find((l) => l.id === activeLoaderId) || null
+    : null;
+
+  const configProfile = configProfileId
+    ? state.profiles.find((p) => p.id === configProfileId) || null
     : null;
 
   // URL Hash Sync for bookmarkable routes (e.g., #/loader/fabric, #/settings)
@@ -154,6 +162,13 @@ export default function App() {
   const handleCloseDrawer = useCallback(() => {
     handleNavigateView(activeLoaderId ? 'LOADER' : 'HERO');
   }, [activeLoaderId]);
+
+  const handleOpenConfigure = useCallback((id: string) => {
+    setState((prev) => ({ ...prev, activeProfileId: id }));
+    setConfigProfileId(id);
+  }, []);
+
+  const handleCloseConfigure = useCallback(() => setConfigProfileId(null), []);
 
   const handleSelectLoader = (loaderId: LoaderType) => {    const config = LOADERS_CONFIG.find((l) => l.id === loaderId);
     setActiveView('LOADER');
@@ -416,10 +431,7 @@ export default function App() {
             onUpdateProfile={handleUpdateProfile}
             onDeleteProfile={handleDeleteProfile}
             onLaunch={handleLaunch}
-            onOpenConfigure={(id) => {
-              handleSelectProfile(id);
-              handleNavigateView('CONFIGURE');
-            }}
+            onOpenConfigure={handleOpenConfigure}
             onOpenStore={() => handleNavigateView('STORE')}
             isRunning={isRunning}
           />
@@ -429,7 +441,7 @@ export default function App() {
             isRunning={isRunning}
             onLaunch={handleLaunch}
             onTerminate={handleTerminate}
-            onOpenConfigure={() => handleNavigateView('CONFIGURE')}
+            onOpenConfigure={() => handleOpenConfigure(activeProfile.id)}
             onOpenMods={() => handleNavigateView('MODS')}
             onOpenConsole={() => handleNavigateView('CONSOLE')}
             drawerOpen={RIGHT_DRAWER_VIEWS.includes(activeView)}
@@ -448,10 +460,7 @@ export default function App() {
             onAddProfile={handleAddProfile}
             onDeleteProfile={handleDeleteProfile}
             onUpdateProfile={handleUpdateProfile}
-            onOpenConfigure={(id) => {
-              handleSelectProfile(id);
-              handleNavigateView('CONFIGURE');
-            }}
+            onOpenConfigure={handleOpenConfigure}
             settings={state.globalSettings}
             onUpdateSettings={handleUpdateSettings}
             isRunning={isRunning}
@@ -470,6 +479,7 @@ export default function App() {
           onSelectProfile={handleSelectProfile}
           onSelectView={handleNavigateView}
           onSelectLoader={handleSelectLoader}
+          onOpenConfigure={handleOpenConfigure}
           onLaunch={handleLaunch}
           isRunning={isRunning}
           onToggleAnimations={() =>
@@ -481,6 +491,16 @@ export default function App() {
           animationsEnabled={state.globalSettings.animationsEnabled !== false}
           isModLoaderContext={Boolean(activeLoaderId || activeView === 'LOADER' || (activeProfile && activeProfile.loader !== 'VANILLA'))}
         />
+
+        {/* 5. Instance config popup — stacks over the current view */}
+        {!viewLocked && configProfile && (
+          <InstanceConfigModal
+            profile={configProfile}
+            onUpdateProfile={handleUpdateProfile}
+            onClose={handleCloseConfigure}
+            isRunning={isRunning}
+          />
+        )}
       </main>
     </div>
   );

@@ -730,11 +730,16 @@ select.input-field option {
   animation: drawerFullIn 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Centered popup variant — used by CONFIGURE */
+/* Centered popup variant — used by the instance config popup */
 .drawer-overlay-center {
   justify-content: center;
   align-items: center;
   padding: 24px;
+}
+
+/* Stacks above an already-open drawer (z-index 50). */
+.drawer-overlay-config {
+  z-index: 60;
 }
 
 .drawer-dialog-center {

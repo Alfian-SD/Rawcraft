@@ -11,6 +11,7 @@ interface CommandPaletteProps {
   onSelectProfile: (id: string) => void;
   onSelectView: (view: ActiveView) => void;
   onSelectLoader?: (loaderId: LoaderType) => void;
+  onOpenConfigure?: (id: string) => void;
   onLaunch: () => void;
   isRunning: boolean;
   onToggleAnimations?: () => void;
@@ -36,6 +37,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onSelectProfile,
   onSelectView,
   onSelectLoader,
+  onOpenConfigure,
   onLaunch,
   isRunning,
   onToggleAnimations,
@@ -129,7 +131,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         </svg>
       ),
       action: () => {
-        onSelectView('CONFIGURE');
+        if (onOpenConfigure) onOpenConfigure(activeProfileId);
         onClose();
       },
     },

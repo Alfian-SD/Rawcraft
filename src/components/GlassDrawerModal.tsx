@@ -3,7 +3,6 @@ import { ActiveView } from './NavigationRail';
 import { Profile, GlobalSettings } from '../types/launcher';
 import { EngineAndFilesTab } from './EngineAndFilesTab';
 import { ModInstallerTab } from './ModInstallerTab';
-import { InstanceConfigPanel } from './InstanceConfigPanel';
 
 interface GlassDrawerModalProps {
   activeView: ActiveView;
@@ -138,9 +137,7 @@ export const GlassDrawerModal: React.FC<GlassDrawerModalProps> = ({
 
   return (
     <div
-      className={`drawer-overlay ${activeView === 'STORE' ? 'drawer-overlay-full' : ''} ${
-        activeView === 'CONFIGURE' ? 'drawer-overlay-center' : ''
-      }`}
+      className={`drawer-overlay ${activeView === 'STORE' ? 'drawer-overlay-full' : ''}`}
       onClick={onClose}
     >
       <div
@@ -148,9 +145,7 @@ export const GlassDrawerModal: React.FC<GlassDrawerModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="drawer-modal-title"
-        className={`drawer-dialog ${activeView === 'STORE' ? 'drawer-dialog-full' : ''} ${
-          activeView === 'CONFIGURE' ? 'drawer-dialog-center' : ''
-        }`}
+        className={`drawer-dialog ${activeView === 'STORE' ? 'drawer-dialog-full' : ''}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Drawer Header */}
@@ -205,23 +200,8 @@ export const GlassDrawerModal: React.FC<GlassDrawerModalProps> = ({
         </div>
 
         {/* Drawer Scrollable Body */}
-        <div
-          style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: activeView === 'CONFIGURE' ? '20px 24px 24px 24px' : '32px',
-          }}
-        >
-          {/* 1. CONFIGURE — focused instance popup (name, version, RAM, mods) */}
-          {activeView === 'CONFIGURE' && (
-            <InstanceConfigPanel
-              profile={profile}
-              onUpdateProfile={onUpdateProfile}
-              isRunning={isRunning}
-            />
-          )}
-
-          {/* 2. MODS — full local file manager */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+          {/* 1. MODS — full local file manager */}
           {activeView === 'MODS' && (
             <EngineAndFilesTab
               profile={profile}
